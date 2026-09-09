@@ -1,17 +1,68 @@
 import { useRef, useState } from "react";
 import "./App.css";
 
-function App() {
-  const [arraySize, setArraySize] = useState(8);
+/* ----------------------------- */
+/* Constants / Types             */
+/* ----------------------------- */
 
-  const [array, setArray] = useState([42, 88, 21, 65, 35, 97, 53, 74]);
+const INITIAL_ARRAY = [42, 88, 21, 65, 35, 97, 53, 74];
+
+const SEARCH_ARRAY = [12, 21, 35, 42, 53, 65, 74, 88, 97];
+
+const ROWS = 12;
+const COLS = 20;
+
+const START_NODE = { row: 5, col: 3 };
+const END_NODE = { row: 5, col: 16 };
+
+type Section = "sorting" | "searching" | "pathfinding" | "graphs";
+
+type SortingAlgorithm =
+  | "bubble"
+  | "selection"
+  | "insertion"
+  | "merge"
+  | "quick";
+
+type SearchAlgorithm = "binary" | "linear";
+
+type PathAlgorithm = "bfs" | "dfs" | "dijkstra";
+
+type GridMode = "wall" | "weight";
+
+/* ----------------------------- */
+/* App                           */
+/* ----------------------------- */
+
+function App() {
+  /* --------------------------- */
+  /* General                     */
+  /* --------------------------- */
+
+  const [activeSection, setActiveSection] = useState<Section>("sorting");
+
+  const [speed, setSpeed] = useState(400);
+  const speedRef = useRef(400);
+
+  /* --------------------------- */
+  /* Sorting                     */
+  /* --------------------------- */
+
+  const [arraySize, setArraySize] = useState(8);
+  const [array, setArray] = useState(INITIAL_ARRAY);
+
+  const [selectedAlgorithm, setSelectedAlgorithm] =
+    useState<SortingAlgorithm>("bubble");
 
   const [comparing, setComparing] = useState<number[]>([]);
   const [sortedIndices, setSortedIndices] = useState<number[]>([]);
+
   const [currentMin, setCurrentMin] = useState<number | null>(null);
+
   const [currentInsert, setCurrentInsert] = useState<number | null>(null);
 
   const [mergeRange, setMergeRange] = useState<number[]>([]);
+
   const [mergeWriting, setMergeWriting] = useState<number | null>(null);
 
   const [pivotIndex, setPivotIndex] = useState<number | null>(null);
@@ -20,39 +71,64 @@ function App() {
   const [swaps, setSwaps] = useState(0);
   const [isSorting, setIsSorting] = useState(false);
 
-  const [speed, setSpeed] = useState(400);
-  const speedRef = useRef(400);
-
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState("bubble");
-  const [activeSection, setActiveSection] = useState("sorting");
-
-  const [searchArray, setSearchArray] = useState([
-    12, 21, 35, 42, 53, 65, 74, 88, 97,
-  ]);
+  /* --------------------------- */
+  /* Searching                   */
+  /* --------------------------- */
 
   const [selectedSearchAlgorithm, setSelectedSearchAlgorithm] =
-    useState("binary");
+    useState<SearchAlgorithm>("binary");
 
   const [searchTarget, setSearchTarget] = useState(53);
+
   const [searchMiddle, setSearchMiddle] = useState<number | null>(null);
+
   const [eliminatedIndices, setEliminatedIndices] = useState<number[]>([]);
+
   const [foundIndex, setFoundIndex] = useState<number | null>(null);
+
   const [searchComparisons, setSearchComparisons] = useState(0);
+
   const [isSearching, setIsSearching] = useState(false);
 
-  const ROWS = 12;
-  const COLS = 20;
+  /* --------------------------- */
+  /* Pathfinding                 */
+  /* --------------------------- */
+
+  const [selectedPathAlgorithm, setSelectedPathAlgorithm] =
+    useState<PathAlgorithm>("bfs");
+
+  const [gridMode, setGridMode] = useState<GridMode>("wall");
 
   const [walls, setWalls] = useState<string[]>([]);
-
-  const startNode = { row: 5, col: 3 };
-  const endNode = { row: 5, col: 16 };
+  const [weightedNodes, setWeightedNodes] = useState<string[]>([]);
 
   const [visitedNodes, setVisitedNodes] = useState<string[]>([]);
   const [pathNodes, setPathNodes] = useState<string[]>([]);
+
   const [isPathfinding, setIsPathfinding] = useState(false);
 
-  function resetVisualization() {
+  /* --------------------------- */
+  /* Shared Helpers              */
+  /* --------------------------- */
+
+  function sleep(ms: number) {
+    return new Promise<void>((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  function handleSpeedChange(value: string) {
+    const newSpeed = 750 - Number(value);
+
+    setSpeed(newSpeed);
+    speedRef.current = newSpeed;
+  }
+
+  /* --------------------------- */
+  /* Sorting Helpers             */
+  /* --------------------------- */
+
+  function resetSortingVisualization() {
     setComparing([]);
     setSortedIndices([]);
     setCurrentMin(null);
@@ -71,16 +147,28 @@ function App() {
     );
 
     setArray(newArray);
-    resetVisualization();
+    resetSortingVisualization();
   }
 
-  function sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  function changeArraySize(newSize: number) {
+    setArraySize(newSize);
+
+    const newArray = Array.from(
+      { length: newSize },
+      () => Math.floor(Math.random() * 80) + 20,
+    );
+
+    setArray(newArray);
+    resetSortingVisualization();
   }
+
+  /* --------------------------- */
+  /* Bubble Sort                 */
+  /* --------------------------- */
 
   async function bubbleSort() {
     setIsSorting(true);
-    resetVisualization();
+    resetSortingVisualization();
 
     const workingArray = [...array];
 
@@ -92,10 +180,10 @@ function App() {
         await sleep(speedRef.current);
 
         if (workingArray[j] > workingArray[j + 1]) {
-          const temp = workingArray[j];
-
-          workingArray[j] = workingArray[j + 1];
-          workingArray[j + 1] = temp;
+          [workingArray[j], workingArray[j + 1]] = [
+            workingArray[j + 1],
+            workingArray[j],
+          ];
 
           setArray([...workingArray]);
           setSwaps((count) => count + 1);
@@ -116,9 +204,13 @@ function App() {
     setIsSorting(false);
   }
 
+  /* --------------------------- */
+  /* Selection Sort              */
+  /* --------------------------- */
+
   async function selectionSort() {
     setIsSorting(true);
-    resetVisualization();
+    resetSortingVisualization();
 
     const workingArray = [...array];
 
@@ -140,10 +232,10 @@ function App() {
       }
 
       if (minIndex !== i) {
-        const temp = workingArray[i];
-
-        workingArray[i] = workingArray[minIndex];
-        workingArray[minIndex] = temp;
+        [workingArray[i], workingArray[minIndex]] = [
+          workingArray[minIndex],
+          workingArray[i],
+        ];
 
         setArray([...workingArray]);
         setSwaps((count) => count + 1);
@@ -165,9 +257,13 @@ function App() {
     setIsSorting(false);
   }
 
+  /* --------------------------- */
+  /* Insertion Sort              */
+  /* --------------------------- */
+
   async function insertionSort() {
     setIsSorting(true);
-    resetVisualization();
+    resetSortingVisualization();
 
     setSortedIndices([0]);
 
@@ -181,6 +277,7 @@ function App() {
       while (j > 0) {
         setCurrentInsert(j);
         setComparing([j - 1]);
+
         setComparisons((count) => count + 1);
 
         await sleep(speedRef.current);
@@ -189,10 +286,10 @@ function App() {
           break;
         }
 
-        const temp = workingArray[j - 1];
-
-        workingArray[j - 1] = workingArray[j];
-        workingArray[j] = temp;
+        [workingArray[j - 1], workingArray[j]] = [
+          workingArray[j],
+          workingArray[j - 1],
+        ];
 
         setArray([...workingArray]);
         setSwaps((count) => count + 1);
@@ -210,9 +307,6 @@ function App() {
       setSortedIndices(Array.from({ length: i + 1 }, (_, index) => index));
     }
 
-    setComparing([]);
-    setCurrentInsert(null);
-
     setSortedIndices(
       Array.from({ length: workingArray.length }, (_, index) => index),
     );
@@ -220,14 +314,19 @@ function App() {
     setIsSorting(false);
   }
 
+  /* --------------------------- */
+  /* Merge Sort                  */
+  /* --------------------------- */
+
   async function mergeSort() {
     setIsSorting(true);
-    resetVisualization();
+    resetSortingVisualization();
 
     const workingArray = [...array];
 
     async function merge(left: number, middle: number, right: number) {
       const leftArray = workingArray.slice(left, middle + 1);
+
       const rightArray = workingArray.slice(middle + 1, right + 1);
 
       setMergeRange(
@@ -240,6 +339,7 @@ function App() {
 
       while (i < leftArray.length && j < rightArray.length) {
         setComparing([left + i, middle + 1 + j]);
+
         setComparisons((count) => count + 1);
 
         await sleep(speedRef.current);
@@ -314,9 +414,13 @@ function App() {
     setIsSorting(false);
   }
 
+  /* --------------------------- */
+  /* Quick Sort                  */
+  /* --------------------------- */
+
   async function quickSort() {
     setIsSorting(true);
-    resetVisualization();
+    resetSortingVisualization();
 
     const workingArray = [...array];
 
@@ -337,10 +441,10 @@ function App() {
           i++;
 
           if (i !== j) {
-            const temp = workingArray[i];
-
-            workingArray[i] = workingArray[j];
-            workingArray[j] = temp;
+            [workingArray[i], workingArray[j]] = [
+              workingArray[j],
+              workingArray[i],
+            ];
 
             setArray([...workingArray]);
             setSwaps((count) => count + 1);
@@ -353,10 +457,10 @@ function App() {
       const pivotPosition = i + 1;
 
       if (pivotPosition !== high) {
-        const temp = workingArray[pivotPosition];
-
-        workingArray[pivotPosition] = workingArray[high];
-        workingArray[high] = temp;
+        [workingArray[pivotPosition], workingArray[high]] = [
+          workingArray[high],
+          workingArray[pivotPosition],
+        ];
 
         setArray([...workingArray]);
         setSwaps((count) => count + 1);
@@ -388,6 +492,7 @@ function App() {
       const pivotPosition = await partition(low, high);
 
       await sort(low, pivotPosition - 1);
+
       await sort(pivotPosition + 1, high);
     }
 
@@ -404,64 +509,81 @@ function App() {
   }
 
   function startSorting() {
-    if (selectedAlgorithm === "bubble") {
-      bubbleSort();
-    }
+    switch (selectedAlgorithm) {
+      case "bubble":
+        void bubbleSort();
+        break;
 
-    if (selectedAlgorithm === "selection") {
-      selectionSort();
-    }
+      case "selection":
+        void selectionSort();
+        break;
 
-    if (selectedAlgorithm === "insertion") {
-      insertionSort();
-    }
+      case "insertion":
+        void insertionSort();
+        break;
 
-    if (selectedAlgorithm === "merge") {
-      mergeSort();
-    }
+      case "merge":
+        void mergeSort();
+        break;
 
-    if (selectedAlgorithm === "quick") {
-      quickSort();
+      case "quick":
+        void quickSort();
+        break;
     }
   }
 
   function getTimeComplexity() {
-    if (selectedAlgorithm === "merge" || selectedAlgorithm === "quick") {
-      return "O(n log n)";
-    }
+    switch (selectedAlgorithm) {
+      case "merge":
+        return "O(n log n)";
 
-    return "O(n²)";
+      case "quick":
+        return "O(n log n) avg.";
+
+      default:
+        return "O(n²)";
+    }
   }
 
   function getSpaceComplexity() {
-    if (selectedAlgorithm === "merge") {
-      return "O(n)";
-    }
+    switch (selectedAlgorithm) {
+      case "merge":
+        return "O(n)";
 
-    if (selectedAlgorithm === "quick") {
-      return "O(log n)";
-    }
+      case "quick":
+        return "O(log n)";
 
-    return "O(1)";
+      default:
+        return "O(1)";
+    }
   }
 
-  async function linearSearch() {
-    setIsSearching(true);
+  /* --------------------------- */
+  /* Search Helpers              */
+  /* --------------------------- */
+
+  function resetSearchVisualization() {
     setSearchMiddle(null);
     setEliminatedIndices([]);
     setFoundIndex(null);
     setSearchComparisons(0);
+  }
 
-    for (let i = 0; i < searchArray.length; i++) {
+  async function linearSearch() {
+    setIsSearching(true);
+    resetSearchVisualization();
+
+    for (let i = 0; i < SEARCH_ARRAY.length; i++) {
       setSearchMiddle(i);
       setSearchComparisons((count) => count + 1);
 
       await sleep(speedRef.current);
 
-      if (searchArray[i] === searchTarget) {
+      if (SEARCH_ARRAY[i] === searchTarget) {
         setFoundIndex(i);
         setSearchMiddle(null);
         setIsSearching(false);
+
         return;
       }
 
@@ -474,44 +596,35 @@ function App() {
     setIsSearching(false);
   }
 
-  function startSearch() {
-    if (selectedSearchAlgorithm === "binary") {
-      binarySearch();
-    }
-
-    if (selectedSearchAlgorithm === "linear") {
-      linearSearch();
-    }
-  }
-
   async function binarySearch() {
     setIsSearching(true);
-    setSearchMiddle(null);
-    setEliminatedIndices([]);
-    setFoundIndex(null);
-    setSearchComparisons(0);
+    resetSearchVisualization();
 
     let left = 0;
-    let right = searchArray.length - 1;
+    let right = SEARCH_ARRAY.length - 1;
 
     while (left <= right) {
       const middle = Math.floor((left + right) / 2);
 
       setSearchMiddle(middle);
+
       setSearchComparisons((count) => count + 1);
 
       await sleep(speedRef.current);
 
-      if (searchArray[middle] === searchTarget) {
+      if (SEARCH_ARRAY[middle] === searchTarget) {
         setFoundIndex(middle);
         setSearchMiddle(null);
         setIsSearching(false);
+
         return;
       }
 
-      if (searchArray[middle] < searchTarget) {
+      if (SEARCH_ARRAY[middle] < searchTarget) {
         const eliminated = Array.from(
-          { length: middle - left + 1 },
+          {
+            length: middle - left + 1,
+          },
           (_, index) => left + index,
         );
 
@@ -520,7 +633,9 @@ function App() {
         left = middle + 1;
       } else {
         const eliminated = Array.from(
-          { length: right - middle + 1 },
+          {
+            length: right - middle + 1,
+          },
           (_, index) => middle + index,
         );
 
@@ -536,12 +651,36 @@ function App() {
     setIsSearching(false);
   }
 
+  function startSearch() {
+    if (selectedSearchAlgorithm === "binary") {
+      void binarySearch();
+    } else {
+      void linearSearch();
+    }
+  }
+
+  /* --------------------------- */
+  /* Pathfinding Helpers         */
+  /* --------------------------- */
+
+  function resetPathVisualization() {
+    setVisitedNodes([]);
+    setPathNodes([]);
+  }
+
+  function clearGrid() {
+    setWalls([]);
+    setWeightedNodes([]);
+
+    resetPathVisualization();
+  }
+
   function toggleWall(row: number, col: number) {
     const key = `${row}-${col}`;
 
-    const isStart = row === startNode.row && col === startNode.col;
+    const isStart = row === START_NODE.row && col === START_NODE.col;
 
-    const isEnd = row === endNode.row && col === endNode.col;
+    const isEnd = row === END_NODE.row && col === END_NODE.col;
 
     if (isStart || isEnd) {
       return;
@@ -554,20 +693,78 @@ function App() {
 
       return [...currentWalls, key];
     });
+
+    setWeightedNodes((current) => current.filter((node) => node !== key));
+
+    resetPathVisualization();
   }
+
+  function toggleWeight(row: number, col: number) {
+    const key = `${row}-${col}`;
+
+    const isStart = row === START_NODE.row && col === START_NODE.col;
+
+    const isEnd = row === END_NODE.row && col === END_NODE.col;
+
+    if (isStart || isEnd) {
+      return;
+    }
+
+    setWeightedNodes((current) => {
+      if (current.includes(key)) {
+        return current.filter((node) => node !== key);
+      }
+
+      return [...current, key];
+    });
+
+    setWalls((current) => current.filter((wall) => wall !== key));
+
+    resetPathVisualization();
+  }
+
+  async function animatePath(
+    endKey: string,
+    startKey: string,
+    parents: Map<string, string | null>,
+  ) {
+    const path: string[] = [];
+
+    let current: string | null = endKey;
+
+    while (current !== null) {
+      path.unshift(current);
+
+      current = parents.get(current) ?? null;
+    }
+
+    for (const node of path) {
+      if (node !== startKey && node !== endKey) {
+        setPathNodes((nodes) => [...nodes, node]);
+
+        await sleep(speedRef.current / 2);
+      }
+    }
+  }
+
+  /* --------------------------- */
+  /* BFS                         */
+  /* --------------------------- */
 
   async function bfsPathfinding() {
     setIsPathfinding(true);
-    setVisitedNodes([]);
-    setPathNodes([]);
+    resetPathVisualization();
 
-    const startKey = `${startNode.row}-${startNode.col}`;
-    const endKey = `${endNode.row}-${endNode.col}`;
+    const startKey = `${START_NODE.row}-${START_NODE.col}`;
+
+    const endKey = `${END_NODE.row}-${END_NODE.col}`;
 
     const queue: string[] = [startKey];
+
     const visited = new Set<string>([startKey]);
 
     const parents = new Map<string, string | null>();
+
     parents.set(startKey, null);
 
     const directions = [
@@ -593,22 +790,7 @@ function App() {
       }
 
       if (currentKey === endKey) {
-        const path: string[] = [];
-
-        let current: string | null = endKey;
-
-        while (current !== null) {
-          path.unshift(current);
-          current = parents.get(current) ?? null;
-        }
-
-        for (const node of path) {
-          if (node !== startKey && node !== endKey) {
-            setPathNodes((nodes) => [...nodes, node]);
-
-            await sleep(speedRef.current / 2);
-          }
-        }
+        await animatePath(endKey, startKey, parents);
 
         setIsPathfinding(false);
         return;
@@ -616,6 +798,7 @@ function App() {
 
       for (const [rowChange, colChange] of directions) {
         const newRow = row + rowChange;
+
         const newCol = col + colChange;
 
         if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) {
@@ -633,7 +816,9 @@ function App() {
         }
 
         visited.add(neighborKey);
+
         parents.set(neighborKey, currentKey);
+
         queue.push(neighborKey);
       }
     }
@@ -641,11 +826,237 @@ function App() {
     setIsPathfinding(false);
   }
 
+  /* --------------------------- */
+  /* DFS                         */
+  /* --------------------------- */
+
+  async function dfsPathfinding() {
+    setIsPathfinding(true);
+    resetPathVisualization();
+
+    const startKey = `${START_NODE.row}-${START_NODE.col}`;
+
+    const endKey = `${END_NODE.row}-${END_NODE.col}`;
+
+    const stack: string[] = [startKey];
+
+    const visited = new Set<string>();
+
+    const parents = new Map<string, string | null>();
+
+    parents.set(startKey, null);
+
+    const directions = [
+      [-1, 0],
+      [0, 1],
+      [1, 0],
+      [0, -1],
+    ];
+
+    while (stack.length > 0) {
+      const currentKey = stack.pop();
+
+      if (!currentKey) {
+        break;
+      }
+
+      if (visited.has(currentKey)) {
+        continue;
+      }
+
+      visited.add(currentKey);
+
+      const [row, col] = currentKey.split("-").map(Number);
+
+      if (currentKey !== startKey && currentKey !== endKey) {
+        setVisitedNodes((nodes) => [...nodes, currentKey]);
+
+        await sleep(speedRef.current / 3);
+      }
+
+      if (currentKey === endKey) {
+        await animatePath(endKey, startKey, parents);
+
+        setIsPathfinding(false);
+
+        return;
+      }
+
+      for (let i = directions.length - 1; i >= 0; i--) {
+        const [rowChange, colChange] = directions[i];
+
+        const newRow = row + rowChange;
+
+        const newCol = col + colChange;
+
+        if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) {
+          continue;
+        }
+
+        const neighborKey = `${newRow}-${newCol}`;
+
+        if (walls.includes(neighborKey)) {
+          continue;
+        }
+
+        if (visited.has(neighborKey)) {
+          continue;
+        }
+
+        if (!parents.has(neighborKey)) {
+          parents.set(neighborKey, currentKey);
+        }
+
+        stack.push(neighborKey);
+      }
+    }
+
+    setIsPathfinding(false);
+  }
+
+  /* --------------------------- */
+  /* Dijkstra                    */
+  /* --------------------------- */
+
+  async function dijkstraPathfinding() {
+    setIsPathfinding(true);
+    resetPathVisualization();
+
+    const startKey = `${START_NODE.row}-${START_NODE.col}`;
+
+    const endKey = `${END_NODE.row}-${END_NODE.col}`;
+
+    const distances = new Map<string, number>();
+
+    const parents = new Map<string, string | null>();
+
+    const visited = new Set<string>();
+
+    const unvisited: string[] = [];
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const key = `${row}-${col}`;
+
+        if (!walls.includes(key)) {
+          distances.set(key, Infinity);
+
+          unvisited.push(key);
+        }
+      }
+    }
+
+    distances.set(startKey, 0);
+
+    parents.set(startKey, null);
+
+    const directions = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ];
+
+    while (unvisited.length > 0) {
+      unvisited.sort(
+        (a, b) =>
+          (distances.get(a) ?? Infinity) - (distances.get(b) ?? Infinity),
+      );
+
+      const currentKey = unvisited.shift();
+
+      if (!currentKey) {
+        break;
+      }
+
+      const currentDistance = distances.get(currentKey) ?? Infinity;
+
+      if (currentDistance === Infinity) {
+        break;
+      }
+
+      if (visited.has(currentKey)) {
+        continue;
+      }
+
+      visited.add(currentKey);
+
+      if (currentKey !== startKey && currentKey !== endKey) {
+        setVisitedNodes((nodes) => [...nodes, currentKey]);
+
+        await sleep(speedRef.current / 3);
+      }
+
+      if (currentKey === endKey) {
+        await animatePath(endKey, startKey, parents);
+
+        setIsPathfinding(false);
+
+        return;
+      }
+
+      const [row, col] = currentKey.split("-").map(Number);
+
+      for (const [rowChange, colChange] of directions) {
+        const newRow = row + rowChange;
+
+        const newCol = col + colChange;
+
+        if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) {
+          continue;
+        }
+
+        const neighborKey = `${newRow}-${newCol}`;
+
+        if (walls.includes(neighborKey)) {
+          continue;
+        }
+
+        if (visited.has(neighborKey)) {
+          continue;
+        }
+
+        const weight = weightedNodes.includes(neighborKey) ? 5 : 1;
+
+        const newDistance = currentDistance + weight;
+
+        if (newDistance < (distances.get(neighborKey) ?? Infinity)) {
+          distances.set(neighborKey, newDistance);
+
+          parents.set(neighborKey, currentKey);
+        }
+      }
+    }
+
+    setIsPathfinding(false);
+  }
+
+  function startPathfinding() {
+    switch (selectedPathAlgorithm) {
+      case "bfs":
+        void bfsPathfinding();
+        break;
+
+      case "dfs":
+        void dfsPathfinding();
+        break;
+
+      case "dijkstra":
+        void dijkstraPathfinding();
+        break;
+    }
+  }
+
+  /* --------------------------- */
+  /* Render                      */
+  /* --------------------------- */
+
   return (
     <div className="app">
       <header className="header">
         <div>
           <p className="eyebrow">INTERACTIVE CS TOOL</p>
+
           <h1>Algorithm Visualizer</h1>
         </div>
 
@@ -681,6 +1092,10 @@ function App() {
       </header>
 
       <main className="main">
+        {/* --------------------- */}
+        {/* Sorting               */}
+        {/* --------------------- */}
+
         {activeSection === "sorting" && (
           <>
             <section className="controls-panel">
@@ -691,14 +1106,21 @@ function App() {
                   value={selectedAlgorithm}
                   disabled={isSorting}
                   onChange={(event) => {
-                    setSelectedAlgorithm(event.target.value);
-                    resetVisualization();
+                    setSelectedAlgorithm(
+                      event.target.value as SortingAlgorithm,
+                    );
+
+                    resetSortingVisualization();
                   }}
                 >
                   <option value="bubble">Bubble Sort</option>
+
                   <option value="selection">Selection Sort</option>
+
                   <option value="insertion">Insertion Sort</option>
+
                   <option value="merge">Merge Sort</option>
+
                   <option value="quick">Quick Sort</option>
                 </select>
               </div>
@@ -712,19 +1134,9 @@ function App() {
                   max="20"
                   value={arraySize}
                   disabled={isSorting}
-                  onChange={(event) => {
-                    const newSize = Number(event.target.value);
-
-                    setArraySize(newSize);
-
-                    const newArray = Array.from(
-                      { length: newSize },
-                      () => Math.floor(Math.random() * 80) + 20,
-                    );
-
-                    setArray(newArray);
-                    resetVisualization();
-                  }}
+                  onChange={(event) =>
+                    changeArraySize(Number(event.target.value))
+                  }
                 />
               </div>
 
@@ -737,12 +1149,7 @@ function App() {
                   max="700"
                   step="50"
                   value={750 - speed}
-                  onChange={(event) => {
-                    const newSpeed = 750 - Number(event.target.value);
-
-                    setSpeed(newSpeed);
-                    speedRef.current = newSpeed;
-                  }}
+                  onChange={(event) => handleSpeedChange(event.target.value)}
                 />
               </div>
 
@@ -755,15 +1162,11 @@ function App() {
               </button>
 
               <button
-                className="secondary-button"
-                onClick={() => {
-                  setWalls([]);
-                  setVisitedNodes([]);
-                  setPathNodes([]);
-                }}
-                disabled={isPathfinding}
+                className="primary-button"
+                onClick={startSorting}
+                disabled={isSorting}
               >
-                Clear Walls
+                {isSorting ? "Sorting..." : "Start"}
               </button>
             </section>
 
@@ -781,7 +1184,9 @@ function App() {
                     } ${pivotIndex === index ? "pivot" : ""} ${
                       sortedIndices.includes(index) ? "sorted" : ""
                     }`}
-                    style={{ height: `${value * 3}px` }}
+                    style={{
+                      height: `${value * 3}px`,
+                    }}
                   >
                     <span>{value}</span>
                   </div>
@@ -790,20 +1195,20 @@ function App() {
 
               <div className="legend">
                 <div>
-                  <span className="legend-box comparing-box"></span>
+                  <span className="legend-box comparing-box" />
                   Comparing
                 </div>
 
                 {selectedAlgorithm === "selection" && (
                   <div>
-                    <span className="legend-box minimum-box"></span>
+                    <span className="legend-box minimum-box" />
                     Current Minimum
                   </div>
                 )}
 
                 {selectedAlgorithm === "insertion" && (
                   <div>
-                    <span className="legend-box inserting-box"></span>
+                    <span className="legend-box inserting-box" />
                     Inserting
                   </div>
                 )}
@@ -811,12 +1216,12 @@ function App() {
                 {selectedAlgorithm === "merge" && (
                   <>
                     <div>
-                      <span className="legend-box merge-range-box"></span>
+                      <span className="legend-box merge-range-box" />
                       Merge Range
                     </div>
 
                     <div>
-                      <span className="legend-box merge-writing-box"></span>
+                      <span className="legend-box merge-writing-box" />
                       Writing
                     </div>
                   </>
@@ -824,13 +1229,13 @@ function App() {
 
                 {selectedAlgorithm === "quick" && (
                   <div>
-                    <span className="legend-box pivot-box"></span>
+                    <span className="legend-box pivot-box" />
                     Pivot
                   </div>
                 )}
 
                 <div>
-                  <span className="legend-box sorted-box"></span>
+                  <span className="legend-box sorted-box" />
                   Sorted
                 </div>
               </div>
@@ -839,26 +1244,34 @@ function App() {
             <section className="info-panel">
               <div>
                 <span>Comparisons</span>
+
                 <strong>{comparisons}</strong>
               </div>
 
               <div>
                 <span>Swaps</span>
+
                 <strong>{swaps}</strong>
               </div>
 
               <div>
                 <span>Time Complexity</span>
+
                 <strong>{getTimeComplexity()}</strong>
               </div>
 
               <div>
                 <span>Space Complexity</span>
+
                 <strong>{getSpaceComplexity()}</strong>
               </div>
             </section>
           </>
         )}
+
+        {/* --------------------- */}
+        {/* Searching             */}
+        {/* --------------------- */}
 
         {activeSection === "searching" && (
           <>
@@ -870,14 +1283,15 @@ function App() {
                   value={selectedSearchAlgorithm}
                   disabled={isSearching}
                   onChange={(event) => {
-                    setSelectedSearchAlgorithm(event.target.value);
-                    setSearchMiddle(null);
-                    setEliminatedIndices([]);
-                    setFoundIndex(null);
-                    setSearchComparisons(0);
+                    setSelectedSearchAlgorithm(
+                      event.target.value as SearchAlgorithm,
+                    );
+
+                    resetSearchVisualization();
                   }}
                 >
                   <option value="binary">Binary Search</option>
+
                   <option value="linear">Linear Search</option>
                 </select>
               </div>
@@ -892,10 +1306,8 @@ function App() {
                   disabled={isSearching}
                   onChange={(event) => {
                     setSearchTarget(Number(event.target.value));
-                    setSearchMiddle(null);
-                    setFoundIndex(null);
-                    setEliminatedIndices([]);
-                    setSearchComparisons(0);
+
+                    resetSearchVisualization();
                   }}
                 />
               </div>
@@ -909,12 +1321,7 @@ function App() {
                   max="700"
                   step="50"
                   value={750 - speed}
-                  onChange={(event) => {
-                    const newSpeed = 750 - Number(event.target.value);
-
-                    setSpeed(newSpeed);
-                    speedRef.current = newSpeed;
-                  }}
+                  onChange={(event) => handleSpeedChange(event.target.value)}
                 />
               </div>
 
@@ -929,7 +1336,7 @@ function App() {
 
             <section className="search-visualizer-panel">
               <div className="search-array">
-                {searchArray.map((value, index) => (
+                {SEARCH_ARRAY.map((value, index) => (
                   <div
                     key={index}
                     className={`search-item ${
@@ -947,17 +1354,18 @@ function App() {
 
               <div className="legend">
                 <div>
-                  <span className="legend-box search-middle-box"></span>
+                  <span className="legend-box search-middle-box" />
+
                   {selectedSearchAlgorithm === "binary" ? "Middle" : "Checking"}
                 </div>
 
                 <div>
-                  <span className="legend-box search-eliminated-box"></span>
+                  <span className="legend-box search-eliminated-box" />
                   Eliminated
                 </div>
 
                 <div>
-                  <span className="legend-box search-found-box"></span>
+                  <span className="legend-box search-found-box" />
                   Found
                 </div>
               </div>
@@ -966,16 +1374,19 @@ function App() {
             <section className="info-panel">
               <div>
                 <span>Comparisons</span>
+
                 <strong>{searchComparisons}</strong>
               </div>
 
               <div>
                 <span>Target</span>
+
                 <strong>{searchTarget}</strong>
               </div>
 
               <div>
                 <span>Time Complexity</span>
+
                 <strong>
                   {selectedSearchAlgorithm === "binary" ? "O(log n)" : "O(n)"}
                 </strong>
@@ -983,11 +1394,16 @@ function App() {
 
               <div>
                 <span>Space Complexity</span>
+
                 <strong>O(1)</strong>
               </div>
             </section>
           </>
         )}
+
+        {/* --------------------- */}
+        {/* Pathfinding           */}
+        {/* --------------------- */}
 
         {activeSection === "pathfinding" && (
           <>
@@ -995,35 +1411,73 @@ function App() {
               <div>
                 <label>Algorithm</label>
 
-                <select>
-                  <option>BFS</option>
+                <select
+                  value={selectedPathAlgorithm}
+                  disabled={isPathfinding}
+                  onChange={(event) => {
+                    setSelectedPathAlgorithm(
+                      event.target.value as PathAlgorithm,
+                    );
+
+                    resetPathVisualization();
+                  }}
+                >
+                  <option value="bfs">BFS</option>
+
+                  <option value="dfs">DFS</option>
+
+                  <option value="dijkstra">Dijkstra</option>
                 </select>
+              </div>
+
+              <div>
+                <label>Grid Tool</label>
+
+                <select
+                  value={gridMode}
+                  disabled={isPathfinding}
+                  onChange={(event) =>
+                    setGridMode(event.target.value as GridMode)
+                  }
+                >
+                  <option value="wall">Wall</option>
+
+                  <option value="weight">Weight</option>
+                </select>
+              </div>
+
+              <div className="speed-control">
+                <label>Speed: {speed} ms</label>
+
+                <input
+                  type="range"
+                  min="50"
+                  max="700"
+                  step="50"
+                  value={750 - speed}
+                  onChange={(event) => handleSpeedChange(event.target.value)}
+                />
               </div>
 
               <button
                 className="secondary-button"
-                onClick={() => {
-                  setWalls([]);
-                  setVisitedNodes([]);
-                  setPathNodes([]);
-                }}
+                onClick={clearGrid}
                 disabled={isPathfinding}
               >
-                Clear Walls
+                Clear Grid
               </button>
+
               <button
                 className="secondary-button"
-                onClick={() => {
-                  setVisitedNodes([]);
-                  setPathNodes([]);
-                }}
+                onClick={resetPathVisualization}
                 disabled={isPathfinding}
               >
                 Reset Path
               </button>
+
               <button
                 className="primary-button"
-                onClick={bfsPathfinding}
+                onClick={startPathfinding}
                 disabled={isPathfinding}
               >
                 {isPathfinding ? "Searching..." : "Start Pathfinding"}
@@ -1037,32 +1491,43 @@ function App() {
                   gridTemplateColumns: `repeat(${COLS}, 1fr)`,
                 }}
               >
-                {Array.from({ length: ROWS * COLS }).map((_, index) => {
+                {Array.from({
+                  length: ROWS * COLS,
+                }).map((_, index) => {
                   const row = Math.floor(index / COLS);
+
                   const col = index % COLS;
 
                   const key = `${row}-${col}`;
 
                   const isStart =
-                    row === startNode.row && col === startNode.col;
+                    row === START_NODE.row && col === START_NODE.col;
 
-                  const isEnd = row === endNode.row && col === endNode.col;
+                  const isEnd = row === END_NODE.row && col === END_NODE.col;
 
                   const isWall = walls.includes(key);
+
+                  const isWeighted = weightedNodes.includes(key);
 
                   return (
                     <button
                       key={key}
                       className={`grid-node ${
                         visitedNodes.includes(key) ? "visited-node" : ""
-                      } ${pathNodes.includes(key) ? "path-node" : ""} ${
+                      } ${isWeighted ? "weighted-node" : ""} ${
                         isWall ? "wall-node" : ""
-                      } ${isStart ? "start-node" : ""} ${
-                        isEnd ? "end-node" : ""
-                      }`}
+                      } ${pathNodes.includes(key) ? "path-node" : ""} ${
+                        isStart ? "start-node" : ""
+                      } ${isEnd ? "end-node" : ""}`}
                       onClick={() => {
-                        if (!isPathfinding) {
+                        if (isPathfinding) {
+                          return;
+                        }
+
+                        if (gridMode === "wall") {
                           toggleWall(row, col);
+                        } else {
+                          toggleWeight(row, col);
                         }
                       }}
                       aria-label={`Row ${row + 1}, Column ${col + 1}`}
@@ -1075,38 +1540,49 @@ function App() {
 
               <div className="legend">
                 <div>
-                  <span className="legend-box start-box"></span>
+                  <span className="legend-box start-box" />
                   Start
                 </div>
 
                 <div>
-                  <span className="legend-box end-box"></span>
+                  <span className="legend-box end-box" />
                   End
                 </div>
 
                 <div>
-                  <span className="legend-box wall-box"></span>
+                  <span className="legend-box wall-box" />
                   Wall
                 </div>
 
                 <div>
-                  <span className="legend-box visited-box"></span>
+                  <span className="legend-box weight-box" />
+                  Weight (5)
+                </div>
+
+                <div>
+                  <span className="legend-box visited-box" />
                   Visited
                 </div>
 
                 <div>
-                  <span className="legend-box path-box"></span>
-                  Shortest Path
+                  <span className="legend-box path-box" />
+
+                  {selectedPathAlgorithm === "dfs" ? "Path" : "Shortest Path"}
                 </div>
               </div>
             </section>
           </>
         )}
 
+        {/* --------------------- */}
+        {/* Graphs                */}
+        {/* --------------------- */}
+
         {activeSection === "graphs" && (
           <section className="placeholder-panel">
             <h2>Graph Visualizer</h2>
-            <p>Graph traversal algorithms will go here later.</p>
+
+            <p>Graph traversal algorithms will go here next.</p>
           </section>
         )}
       </main>

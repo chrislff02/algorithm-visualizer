@@ -530,3 +530,11 @@ select:disabled {
 .path-box {
   background: #facc15;
 }
+
+.weighted-node {
+  background: #c084fc;
+}
+
+.weight-box {
+  background: #c084fc;
+}
