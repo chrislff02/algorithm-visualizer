@@ -8,11 +8,27 @@ function App() {
 
   const [comparing, setComparing] = useState<number[]>([]);
   const [sortedIndices, setSortedIndices] = useState<number[]>([]);
+
+  const [currentMin, setCurrentMin] = useState<number | null>(null);
+  const [currentInsert, setCurrentInsert] = useState<number | null>(null);
+
   const [comparisons, setComparisons] = useState(0);
   const [swaps, setSwaps] = useState(0);
   const [isSorting, setIsSorting] = useState(false);
+
   const [speed, setSpeed] = useState(400);
   const speedRef = useRef(400);
+
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState("bubble");
+
+  function resetVisualization() {
+    setComparing([]);
+    setCurrentMin(null);
+    setCurrentInsert(null);
+    setSortedIndices([]);
+    setComparisons(0);
+    setSwaps(0);
+  }
 
   function generateNewArray() {
     const newArray = Array.from(
@@ -21,10 +37,7 @@ function App() {
     );
 
     setArray(newArray);
-    setComparing([]);
-    setSortedIndices([]);
-    setComparisons(0);
-    setSwaps(0);
+    resetVisualization();
   }
 
   function sleep(ms: number) {
@@ -33,17 +46,13 @@ function App() {
 
   async function bubbleSort() {
     setIsSorting(true);
-    setComparisons(0);
-    setSwaps(0);
-    setComparing([]);
-    setSortedIndices([]);
+    resetVisualization();
 
     const workingArray = [...array];
 
     for (let i = 0; i < workingArray.length - 1; i++) {
       for (let j = 0; j < workingArray.length - i - 1; j++) {
         setComparing([j, j + 1]);
-
         setComparisons((count) => count + 1);
 
         await sleep(speedRef.current);
@@ -55,7 +64,6 @@ function App() {
           workingArray[j + 1] = temp;
 
           setArray([...workingArray]);
-
           setSwaps((count) => count + 1);
 
           await sleep(speedRef.current);
@@ -72,6 +80,125 @@ function App() {
     );
 
     setIsSorting(false);
+  }
+
+  async function selectionSort() {
+    setIsSorting(true);
+    resetVisualization();
+
+    const workingArray = [...array];
+
+    for (let i = 0; i < workingArray.length - 1; i++) {
+      let minIndex = i;
+
+      setCurrentMin(minIndex);
+
+      for (let j = i + 1; j < workingArray.length; j++) {
+        setComparing([j]);
+        setComparisons((count) => count + 1);
+
+        await sleep(speedRef.current);
+
+        if (workingArray[j] < workingArray[minIndex]) {
+          minIndex = j;
+          setCurrentMin(minIndex);
+        }
+      }
+
+      if (minIndex !== i) {
+        const temp = workingArray[i];
+
+        workingArray[i] = workingArray[minIndex];
+        workingArray[minIndex] = temp;
+
+        setArray([...workingArray]);
+        setSwaps((count) => count + 1);
+
+        await sleep(speedRef.current);
+      }
+
+      setSortedIndices((indices) => [...indices, i]);
+      setCurrentMin(null);
+    }
+
+    setComparing([]);
+    setCurrentMin(null);
+
+    setSortedIndices(
+      Array.from({ length: workingArray.length }, (_, index) => index),
+    );
+
+    setIsSorting(false);
+  }
+
+  async function insertionSort() {
+    setIsSorting(true);
+    resetVisualization();
+
+    setSortedIndices([0]);
+
+    const workingArray = [...array];
+
+    for (let i = 1; i < workingArray.length; i++) {
+      let j = i;
+
+      setCurrentInsert(j);
+
+      while (j > 0) {
+        setCurrentInsert(j);
+        setComparing([j - 1]);
+
+        setComparisons((count) => count + 1);
+
+        await sleep(speedRef.current);
+
+        if (workingArray[j - 1] <= workingArray[j]) {
+          break;
+        }
+
+        const temp = workingArray[j - 1];
+
+        workingArray[j - 1] = workingArray[j];
+        workingArray[j] = temp;
+
+        setArray([...workingArray]);
+        setSwaps((count) => count + 1);
+
+        j--;
+
+        setCurrentInsert(j);
+
+        await sleep(speedRef.current);
+      }
+
+      setComparing([]);
+      setCurrentInsert(null);
+
+      setSortedIndices(Array.from({ length: i + 1 }, (_, index) => index));
+    }
+
+    setComparing([]);
+    setCurrentInsert(null);
+
+    setSortedIndices(
+      Array.from({ length: workingArray.length }, (_, index) => index),
+    );
+
+    setIsSorting(false);
+  }
+
+  function startSorting() {
+    if (selectedAlgorithm === "bubble") {
+      bubbleSort();
+    }
+
+    if (selectedAlgorithm === "selection") {
+      selectionSort();
+    }
+
+    if (selectedAlgorithm === "insertion") {
+      insertionSort();
+    }
   }
 
   return (
@@ -95,10 +222,19 @@ function App() {
           <div>
             <label>Algorithm</label>
 
-            <select disabled={isSorting}>
-              <option>Bubble Sort</option>
-              <option>Merge Sort</option>
-              <option>Quick Sort</option>
+            <select
+              value={selectedAlgorithm}
+              disabled={isSorting}
+              onChange={(event) => {
+                setSelectedAlgorithm(event.target.value);
+                resetVisualization();
+              }}
+            >
+              <option value="bubble">Bubble Sort</option>
+              <option value="selection">Selection Sort</option>
+              <option value="insertion">Insertion Sort</option>
+              <option value="merge">Merge Sort</option>
+              <option value="quick">Quick Sort</option>
             </select>
           </div>
 
@@ -122,10 +258,7 @@ function App() {
                 );
 
                 setArray(newArray);
-                setComparing([]);
-                setSortedIndices([]);
-                setComparisons(0);
-                setSwaps(0);
+                resetVisualization();
               }}
             />
           </div>
@@ -158,7 +291,7 @@ function App() {
 
           <button
             className="primary-button"
-            onClick={bubbleSort}
+            onClick={startSorting}
             disabled={isSorting}
           >
             {isSorting ? "Sorting..." : "Start"}
@@ -172,12 +305,40 @@ function App() {
                 key={index}
                 className={`bar ${
                   comparing.includes(index) ? "comparing" : ""
+                } ${currentMin === index ? "minimum" : ""} ${
+                  currentInsert === index ? "inserting" : ""
                 } ${sortedIndices.includes(index) ? "sorted" : ""}`}
                 style={{ height: `${value * 3}px` }}
               >
                 <span>{value}</span>
               </div>
             ))}
+          </div>
+
+          <div className="legend">
+            <div>
+              <span className="legend-box comparing-box"></span>
+              Comparing
+            </div>
+
+            {selectedAlgorithm === "selection" && (
+              <div>
+                <span className="legend-box minimum-box"></span>
+                Current Minimum
+              </div>
+            )}
+
+            {selectedAlgorithm === "insertion" && (
+              <div>
+                <span className="legend-box inserting-box"></span>
+                Inserting
+              </div>
+            )}
+
+            <div>
+              <span className="legend-box sorted-box"></span>
+              Sorted
+            </div>
           </div>
         </section>
 
