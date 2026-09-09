@@ -8,9 +8,13 @@ function App() {
 
   const [comparing, setComparing] = useState<number[]>([]);
   const [sortedIndices, setSortedIndices] = useState<number[]>([]);
-
   const [currentMin, setCurrentMin] = useState<number | null>(null);
   const [currentInsert, setCurrentInsert] = useState<number | null>(null);
+
+  const [mergeRange, setMergeRange] = useState<number[]>([]);
+  const [mergeWriting, setMergeWriting] = useState<number | null>(null);
+
+  const [pivotIndex, setPivotIndex] = useState<number | null>(null);
 
   const [comparisons, setComparisons] = useState(0);
   const [swaps, setSwaps] = useState(0);
@@ -20,22 +24,32 @@ function App() {
   const speedRef = useRef(400);
 
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("bubble");
+  const [activeSection, setActiveSection] = useState("sorting");
 
-  const [mergeRange, setMergeRange] = useState<number[]>([]);
-  const [mergeWriting, setMergeWriting] = useState<number | null>(null);
+  const [searchArray, setSearchArray] = useState([
+    12, 21, 35, 42, 53, 65, 74, 88, 97,
+  ]);
 
-  const [pivotIndex, setPivotIndex] = useState<number | null>(null);
+  const [selectedSearchAlgorithm, setSelectedSearchAlgorithm] =
+    useState("binary");
+
+  const [searchTarget, setSearchTarget] = useState(53);
+  const [searchMiddle, setSearchMiddle] = useState<number | null>(null);
+  const [eliminatedIndices, setEliminatedIndices] = useState<number[]>([]);
+  const [foundIndex, setFoundIndex] = useState<number | null>(null);
+  const [searchComparisons, setSearchComparisons] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
 
   function resetVisualization() {
     setComparing([]);
+    setSortedIndices([]);
     setCurrentMin(null);
     setCurrentInsert(null);
-    setSortedIndices([]);
-    setComparisons(0);
-    setSwaps(0);
     setMergeRange([]);
     setMergeWriting(null);
     setPivotIndex(null);
+    setComparisons(0);
+    setSwaps(0);
   }
 
   function generateNewArray() {
@@ -155,7 +169,6 @@ function App() {
       while (j > 0) {
         setCurrentInsert(j);
         setComparing([j - 1]);
-
         setComparisons((count) => count + 1);
 
         await sleep(speedRef.current);
@@ -297,6 +310,7 @@ function App() {
 
     async function partition(low: number, high: number) {
       const pivotValue = workingArray[high];
+
       setPivotIndex(high);
 
       let i = low - 1;
@@ -312,6 +326,7 @@ function App() {
 
           if (i !== j) {
             const temp = workingArray[i];
+
             workingArray[i] = workingArray[j];
             workingArray[j] = temp;
 
@@ -327,6 +342,7 @@ function App() {
 
       if (pivotPosition !== high) {
         const temp = workingArray[pivotPosition];
+
         workingArray[pivotPosition] = workingArray[high];
         workingArray[high] = temp;
 
@@ -398,11 +414,7 @@ function App() {
   }
 
   function getTimeComplexity() {
-    if (selectedAlgorithm === "merge") {
-      return "O(n log n)";
-    }
-
-    if (selectedAlgorithm === "quick") {
+    if (selectedAlgorithm === "merge" || selectedAlgorithm === "quick") {
       return "O(n log n)";
     }
 
@@ -421,6 +433,97 @@ function App() {
     return "O(1)";
   }
 
+  async function linearSearch() {
+    setIsSearching(true);
+    setSearchMiddle(null);
+    setEliminatedIndices([]);
+    setFoundIndex(null);
+    setSearchComparisons(0);
+
+    for (let i = 0; i < searchArray.length; i++) {
+      setSearchMiddle(i);
+      setSearchComparisons((count) => count + 1);
+
+      await sleep(speedRef.current);
+
+      if (searchArray[i] === searchTarget) {
+        setFoundIndex(i);
+        setSearchMiddle(null);
+        setIsSearching(false);
+        return;
+      }
+
+      setEliminatedIndices((indices) => [...indices, i]);
+
+      await sleep(speedRef.current);
+    }
+
+    setSearchMiddle(null);
+    setIsSearching(false);
+  }
+
+  function startSearch() {
+    if (selectedSearchAlgorithm === "binary") {
+      binarySearch();
+    }
+
+    if (selectedSearchAlgorithm === "linear") {
+      linearSearch();
+    }
+  }
+
+  async function binarySearch() {
+    setIsSearching(true);
+    setSearchMiddle(null);
+    setEliminatedIndices([]);
+    setFoundIndex(null);
+    setSearchComparisons(0);
+
+    let left = 0;
+    let right = searchArray.length - 1;
+
+    while (left <= right) {
+      const middle = Math.floor((left + right) / 2);
+
+      setSearchMiddle(middle);
+      setSearchComparisons((count) => count + 1);
+
+      await sleep(speedRef.current);
+
+      if (searchArray[middle] === searchTarget) {
+        setFoundIndex(middle);
+        setSearchMiddle(null);
+        setIsSearching(false);
+        return;
+      }
+
+      if (searchArray[middle] < searchTarget) {
+        const eliminated = Array.from(
+          { length: middle - left + 1 },
+          (_, index) => left + index,
+        );
+
+        setEliminatedIndices((indices) => [...indices, ...eliminated]);
+
+        left = middle + 1;
+      } else {
+        const eliminated = Array.from(
+          { length: right - middle + 1 },
+          (_, index) => middle + index,
+        );
+
+        setEliminatedIndices((indices) => [...indices, ...eliminated]);
+
+        right = middle - 1;
+      }
+
+      await sleep(speedRef.current);
+    }
+
+    setSearchMiddle(null);
+    setIsSearching(false);
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -430,184 +533,354 @@ function App() {
         </div>
 
         <nav className="nav">
-          <button>Sorting</button>
-          <button>Searching</button>
-          <button>Pathfinding</button>
-          <button>Graphs</button>
+          <button
+            className={activeSection === "sorting" ? "active" : ""}
+            onClick={() => setActiveSection("sorting")}
+          >
+            Sorting
+          </button>
+
+          <button
+            className={activeSection === "searching" ? "active" : ""}
+            onClick={() => setActiveSection("searching")}
+          >
+            Searching
+          </button>
+
+          <button
+            className={activeSection === "pathfinding" ? "active" : ""}
+            onClick={() => setActiveSection("pathfinding")}
+          >
+            Pathfinding
+          </button>
+
+          <button
+            className={activeSection === "graphs" ? "active" : ""}
+            onClick={() => setActiveSection("graphs")}
+          >
+            Graphs
+          </button>
         </nav>
       </header>
 
       <main className="main">
-        <section className="controls-panel">
-          <div>
-            <label>Algorithm</label>
+        {activeSection === "sorting" && (
+          <>
+            <section className="controls-panel">
+              <div>
+                <label>Algorithm</label>
 
-            <select
-              value={selectedAlgorithm}
-              disabled={isSorting}
-              onChange={(event) => {
-                setSelectedAlgorithm(event.target.value);
-                resetVisualization();
-              }}
-            >
-              <option value="bubble">Bubble Sort</option>
-              <option value="selection">Selection Sort</option>
-              <option value="insertion">Insertion Sort</option>
-              <option value="merge">Merge Sort</option>
-              <option value="quick">Quick Sort</option>
-            </select>
-          </div>
+                <select
+                  value={selectedAlgorithm}
+                  disabled={isSorting}
+                  onChange={(event) => {
+                    setSelectedAlgorithm(event.target.value);
+                    resetVisualization();
+                  }}
+                >
+                  <option value="bubble">Bubble Sort</option>
+                  <option value="selection">Selection Sort</option>
+                  <option value="insertion">Insertion Sort</option>
+                  <option value="merge">Merge Sort</option>
+                  <option value="quick">Quick Sort</option>
+                </select>
+              </div>
 
-          <div className="size-control">
-            <label>Array Size: {arraySize}</label>
+              <div className="size-control">
+                <label>Array Size: {arraySize}</label>
 
-            <input
-              type="range"
-              min="5"
-              max="20"
-              value={arraySize}
-              disabled={isSorting}
-              onChange={(event) => {
-                const newSize = Number(event.target.value);
+                <input
+                  type="range"
+                  min="5"
+                  max="20"
+                  value={arraySize}
+                  disabled={isSorting}
+                  onChange={(event) => {
+                    const newSize = Number(event.target.value);
 
-                setArraySize(newSize);
+                    setArraySize(newSize);
 
-                const newArray = Array.from(
-                  { length: newSize },
-                  () => Math.floor(Math.random() * 80) + 20,
-                );
+                    const newArray = Array.from(
+                      { length: newSize },
+                      () => Math.floor(Math.random() * 80) + 20,
+                    );
 
-                setArray(newArray);
-                resetVisualization();
-              }}
-            />
-          </div>
+                    setArray(newArray);
+                    resetVisualization();
+                  }}
+                />
+              </div>
 
-          <div className="speed-control">
-            <label>Speed: {speed} ms</label>
+              <div className="speed-control">
+                <label>Speed: {speed} ms</label>
 
-            <input
-              type="range"
-              min="50"
-              max="700"
-              step="50"
-              value={750 - speed}
-              onChange={(event) => {
-                const newSpeed = 750 - Number(event.target.value);
+                <input
+                  type="range"
+                  min="50"
+                  max="700"
+                  step="50"
+                  value={750 - speed}
+                  onChange={(event) => {
+                    const newSpeed = 750 - Number(event.target.value);
 
-                setSpeed(newSpeed);
-                speedRef.current = newSpeed;
-              }}
-            />
-          </div>
+                    setSpeed(newSpeed);
+                    speedRef.current = newSpeed;
+                  }}
+                />
+              </div>
 
-          <button
-            className="secondary-button"
-            onClick={generateNewArray}
-            disabled={isSorting}
-          >
-            Generate New Array
-          </button>
-
-          <button
-            className="primary-button"
-            onClick={startSorting}
-            disabled={isSorting}
-          >
-            {isSorting ? "Sorting..." : "Start"}
-          </button>
-        </section>
-
-        <section className="visualizer-panel">
-          <div className="bars-container">
-            {array.map((value, index) => (
-              <div
-                key={index}
-                className={`bar ${
-                  mergeRange.includes(index) ? "merge-range" : ""
-                } ${comparing.includes(index) ? "comparing" : ""} ${
-                  currentMin === index ? "minimum" : ""
-                } ${currentInsert === index ? "inserting" : ""} ${
-                  mergeWriting === index ? "merge-writing" : ""
-                } ${pivotIndex === index ? "pivot" : ""} ${
-                  sortedIndices.includes(index) ? "sorted" : ""
-                }`}
-                style={{ height: `${value * 3}px` }}
+              <button
+                className="secondary-button"
+                onClick={generateNewArray}
+                disabled={isSorting}
               >
-                <span>{value}</span>
+                Generate New Array
+              </button>
+
+              <button
+                className="primary-button"
+                onClick={startSorting}
+                disabled={isSorting}
+              >
+                {isSorting ? "Sorting..." : "Start"}
+              </button>
+            </section>
+
+            <section className="visualizer-panel">
+              <div className="bars-container">
+                {array.map((value, index) => (
+                  <div
+                    key={index}
+                    className={`bar ${
+                      mergeRange.includes(index) ? "merge-range" : ""
+                    } ${comparing.includes(index) ? "comparing" : ""} ${
+                      currentMin === index ? "minimum" : ""
+                    } ${currentInsert === index ? "inserting" : ""} ${
+                      mergeWriting === index ? "merge-writing" : ""
+                    } ${pivotIndex === index ? "pivot" : ""} ${
+                      sortedIndices.includes(index) ? "sorted" : ""
+                    }`}
+                    style={{ height: `${value * 3}px` }}
+                  >
+                    <span>{value}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="legend">
-            <div>
-              <span className="legend-box comparing-box"></span>
-              Comparing
-            </div>
-
-            {selectedAlgorithm === "selection" && (
-              <div>
-                <span className="legend-box minimum-box"></span>
-                Current Minimum
-              </div>
-            )}
-
-            {selectedAlgorithm === "insertion" && (
-              <div>
-                <span className="legend-box inserting-box"></span>
-                Inserting
-              </div>
-            )}
-
-            {selectedAlgorithm === "merge" && (
-              <>
+              <div className="legend">
                 <div>
-                  <span className="legend-box merge-range-box"></span>
-                  Merge Range
+                  <span className="legend-box comparing-box"></span>
+                  Comparing
+                </div>
+
+                {selectedAlgorithm === "selection" && (
+                  <div>
+                    <span className="legend-box minimum-box"></span>
+                    Current Minimum
+                  </div>
+                )}
+
+                {selectedAlgorithm === "insertion" && (
+                  <div>
+                    <span className="legend-box inserting-box"></span>
+                    Inserting
+                  </div>
+                )}
+
+                {selectedAlgorithm === "merge" && (
+                  <>
+                    <div>
+                      <span className="legend-box merge-range-box"></span>
+                      Merge Range
+                    </div>
+
+                    <div>
+                      <span className="legend-box merge-writing-box"></span>
+                      Writing
+                    </div>
+                  </>
+                )}
+
+                {selectedAlgorithm === "quick" && (
+                  <div>
+                    <span className="legend-box pivot-box"></span>
+                    Pivot
+                  </div>
+                )}
+
+                <div>
+                  <span className="legend-box sorted-box"></span>
+                  Sorted
+                </div>
+              </div>
+            </section>
+
+            <section className="info-panel">
+              <div>
+                <span>Comparisons</span>
+                <strong>{comparisons}</strong>
+              </div>
+
+              <div>
+                <span>Swaps</span>
+                <strong>{swaps}</strong>
+              </div>
+
+              <div>
+                <span>Time Complexity</span>
+                <strong>{getTimeComplexity()}</strong>
+              </div>
+
+              <div>
+                <span>Space Complexity</span>
+                <strong>{getSpaceComplexity()}</strong>
+              </div>
+            </section>
+          </>
+        )}
+
+        {activeSection === "searching" && (
+          <>
+            <section className="controls-panel">
+              <div>
+                <label>Algorithm</label>
+
+                <select
+                  value={selectedSearchAlgorithm}
+                  disabled={isSearching}
+                  onChange={(event) => {
+                    setSelectedSearchAlgorithm(event.target.value);
+                    setSearchMiddle(null);
+                    setEliminatedIndices([]);
+                    setFoundIndex(null);
+                    setSearchComparisons(0);
+                  }}
+                >
+                  <option value="binary">Binary Search</option>
+                  <option value="linear">Linear Search</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Target</label>
+
+                <input
+                  className="target-input"
+                  type="number"
+                  value={searchTarget}
+                  disabled={isSearching}
+                  onChange={(event) => {
+                    setSearchTarget(Number(event.target.value));
+                    setSearchMiddle(null);
+                    setFoundIndex(null);
+                    setEliminatedIndices([]);
+                    setSearchComparisons(0);
+                  }}
+                />
+              </div>
+
+              <div className="speed-control">
+                <label>Speed: {speed} ms</label>
+
+                <input
+                  type="range"
+                  min="50"
+                  max="700"
+                  step="50"
+                  value={750 - speed}
+                  onChange={(event) => {
+                    const newSpeed = 750 - Number(event.target.value);
+
+                    setSpeed(newSpeed);
+                    speedRef.current = newSpeed;
+                  }}
+                />
+              </div>
+
+              <button
+                className="primary-button"
+                onClick={startSearch}
+                disabled={isSearching}
+              >
+                {isSearching ? "Searching..." : "Start Search"}
+              </button>
+            </section>
+
+            <section className="search-visualizer-panel">
+              <div className="search-array">
+                {searchArray.map((value, index) => (
+                  <div
+                    key={index}
+                    className={`search-item ${
+                      searchMiddle === index ? "search-middle" : ""
+                    } ${
+                      eliminatedIndices.includes(index)
+                        ? "search-eliminated"
+                        : ""
+                    } ${foundIndex === index ? "search-found" : ""}`}
+                  >
+                    {value}
+                  </div>
+                ))}
+              </div>
+
+              <div className="legend">
+                <div>
+                  <span className="legend-box search-middle-box"></span>
+                  {selectedSearchAlgorithm === "binary" ? "Middle" : "Checking"}
                 </div>
 
                 <div>
-                  <span className="legend-box merge-writing-box"></span>
-                  Writing
+                  <span className="legend-box search-eliminated-box"></span>
+                  Eliminated
                 </div>
-              </>
-            )}
 
-            {selectedAlgorithm === "quick" && (
-              <div>
-                <span className="legend-box pivot-box"></span>
-                Pivot
+                <div>
+                  <span className="legend-box search-found-box"></span>
+                  Found
+                </div>
               </div>
-            )}
+            </section>
 
-            <div>
-              <span className="legend-box sorted-box"></span>
-              Sorted
-            </div>
-          </div>
-        </section>
+            <section className="info-panel">
+              <div>
+                <span>Comparisons</span>
+                <strong>{searchComparisons}</strong>
+              </div>
 
-        <section className="info-panel">
-          <div>
-            <span>Comparisons</span>
-            <strong>{comparisons}</strong>
-          </div>
+              <div>
+                <span>Target</span>
+                <strong>{searchTarget}</strong>
+              </div>
 
-          <div>
-            <span>Swaps</span>
-            <strong>{swaps}</strong>
-          </div>
+              <div>
+                <span>Time Complexity</span>
+                <strong>
+                  {selectedSearchAlgorithm === "binary" ? "O(log n)" : "O(n)"}
+                </strong>
+              </div>
 
-          <div>
-            <span>Time Complexity</span>
-            <strong>{getTimeComplexity()}</strong>{" "}
-          </div>
+              <div>
+                <span>Space Complexity</span>
+                <strong>O(1)</strong>
+              </div>
+            </section>
+          </>
+        )}
 
-          <div>
-            <span>Space Complexity</span>
-            <strong>{getSpaceComplexity()}</strong>
-          </div>
-        </section>
+        {activeSection === "pathfinding" && (
+          <section className="placeholder-panel">
+            <h2>Pathfinding Visualizer</h2>
+            <p>Pathfinding algorithms will go here later.</p>
+          </section>
+        )}
+
+        {activeSection === "graphs" && (
+          <section className="placeholder-panel">
+            <h2>Graph Visualizer</h2>
+            <p>Graph traversal algorithms will go here later.</p>
+          </section>
+        )}
       </main>
     </div>
   );
