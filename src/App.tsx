@@ -26,7 +26,7 @@ type SortingAlgorithm =
 
 type SearchAlgorithm = "binary" | "linear";
 
-type PathAlgorithm = "bfs" | "dfs" | "dijkstra";
+type PathAlgorithm = "bfs" | "dfs" | "dijkstra" | "astar";
 
 type GridMode = "wall" | "weight";
 
@@ -70,6 +70,7 @@ function App() {
   const [comparisons, setComparisons] = useState(0);
   const [swaps, setSwaps] = useState(0);
   const [isSorting, setIsSorting] = useState(false);
+  const [pathCost, setPathCost] = useState(0);
 
   /* --------------------------- */
   /* Searching                   */
@@ -666,6 +667,7 @@ function App() {
   function resetPathVisualization() {
     setVisitedNodes([]);
     setPathNodes([]);
+    setPathCost(0);
   }
 
   function clearGrid() {
@@ -734,17 +736,28 @@ function App() {
 
     while (current !== null) {
       path.unshift(current);
-
       current = parents.get(current) ?? null;
     }
 
+    let totalCost = 0;
+
     for (const node of path) {
-      if (node !== startKey && node !== endKey) {
+      if (node === startKey) {
+        continue;
+      }
+
+      const weight = weightedNodes.includes(node) ? 5 : 1;
+
+      totalCost += weight;
+
+      if (node !== endKey) {
         setPathNodes((nodes) => [...nodes, node]);
 
         await sleep(speedRef.current / 2);
       }
     }
+
+    setPathCost(totalCost);
   }
 
   /* --------------------------- */
@@ -1044,7 +1057,130 @@ function App() {
       case "dijkstra":
         void dijkstraPathfinding();
         break;
+
+      case "astar":
+        void aStarPathfinding();
+        break;
     }
+  }
+
+  function heuristic(row: number, col: number, endRow: number, endCol: number) {
+    return Math.abs(row - endRow) + Math.abs(col - endCol);
+  }
+
+  async function aStarPathfinding() {
+    setIsPathfinding(true);
+    resetPathVisualization();
+
+    const startKey = `${START_NODE.row}-${START_NODE.col}`;
+    const endKey = `${END_NODE.row}-${END_NODE.col}`;
+
+    const gScore = new Map<string, number>();
+    const fScore = new Map<string, number>();
+
+    const parents = new Map<string, string | null>();
+    const visited = new Set<string>();
+
+    const openSet: string[] = [startKey];
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const key = `${row}-${col}`;
+
+        if (!walls.includes(key)) {
+          gScore.set(key, Infinity);
+          fScore.set(key, Infinity);
+        }
+      }
+    }
+
+    gScore.set(startKey, 0);
+
+    fScore.set(
+      startKey,
+      heuristic(START_NODE.row, START_NODE.col, END_NODE.row, END_NODE.col),
+    );
+
+    parents.set(startKey, null);
+
+    const directions = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ];
+
+    while (openSet.length > 0) {
+      openSet.sort(
+        (a, b) => (fScore.get(a) ?? Infinity) - (fScore.get(b) ?? Infinity),
+      );
+
+      const currentKey = openSet.shift();
+
+      if (!currentKey) {
+        break;
+      }
+
+      if (visited.has(currentKey)) {
+        continue;
+      }
+
+      visited.add(currentKey);
+
+      const [row, col] = currentKey.split("-").map(Number);
+
+      if (currentKey !== startKey && currentKey !== endKey) {
+        setVisitedNodes((nodes) => [...nodes, currentKey]);
+
+        await sleep(speedRef.current / 3);
+      }
+
+      if (currentKey === endKey) {
+        await animatePath(endKey, startKey, parents);
+
+        setIsPathfinding(false);
+        return;
+      }
+
+      for (const [rowChange, colChange] of directions) {
+        const newRow = row + rowChange;
+        const newCol = col + colChange;
+
+        if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) {
+          continue;
+        }
+
+        const neighborKey = `${newRow}-${newCol}`;
+
+        if (walls.includes(neighborKey)) {
+          continue;
+        }
+
+        if (visited.has(neighborKey)) {
+          continue;
+        }
+
+        const weight = weightedNodes.includes(neighborKey) ? 5 : 1;
+
+        const tentativeG = (gScore.get(currentKey) ?? Infinity) + weight;
+
+        if (tentativeG < (gScore.get(neighborKey) ?? Infinity)) {
+          parents.set(neighborKey, currentKey);
+
+          gScore.set(neighborKey, tentativeG);
+
+          const h = heuristic(newRow, newCol, END_NODE.row, END_NODE.col);
+
+          fScore.set(neighborKey, tentativeG + h);
+
+          if (!openSet.includes(neighborKey)) {
+            openSet.push(neighborKey);
+          }
+        }
+      }
+    }
+
+    setIsPathfinding(false);
   }
 
   /* --------------------------- */
@@ -1423,10 +1559,9 @@ function App() {
                   }}
                 >
                   <option value="bfs">BFS</option>
-
                   <option value="dfs">DFS</option>
-
                   <option value="dijkstra">Dijkstra</option>
+                  <option value="astar">A*</option>
                 </select>
               </div>
 
@@ -1441,7 +1576,6 @@ function App() {
                   }
                 >
                   <option value="wall">Wall</option>
-
                   <option value="weight">Weight</option>
                 </select>
               </div>
@@ -1495,7 +1629,6 @@ function App() {
                   length: ROWS * COLS,
                 }).map((_, index) => {
                   const row = Math.floor(index / COLS);
-
                   const col = index % COLS;
 
                   const key = `${row}-${col}`;
@@ -1506,7 +1639,6 @@ function App() {
                   const isEnd = row === END_NODE.row && col === END_NODE.col;
 
                   const isWall = walls.includes(key);
-
                   const isWeighted = weightedNodes.includes(key);
 
                   return (
@@ -1566,9 +1698,38 @@ function App() {
 
                 <div>
                   <span className="legend-box path-box" />
-
                   {selectedPathAlgorithm === "dfs" ? "Path" : "Shortest Path"}
                 </div>
+              </div>
+            </section>
+
+            <section className="info-panel">
+              <div>
+                <span>Algorithm</span>
+                <strong>
+                  {selectedPathAlgorithm === "bfs"
+                    ? "BFS"
+                    : selectedPathAlgorithm === "dfs"
+                      ? "DFS"
+                      : selectedPathAlgorithm === "dijkstra"
+                        ? "Dijkstra"
+                        : "A*"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Path Cost</span>
+                <strong>{pathCost}</strong>
+              </div>
+
+              <div>
+                <span>Normal Cell</span>
+                <strong>1</strong>
+              </div>
+
+              <div>
+                <span>Weighted Cell</span>
+                <strong>5</strong>
               </div>
             </section>
           </>
