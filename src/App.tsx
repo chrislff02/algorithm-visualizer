@@ -21,6 +21,11 @@ function App() {
 
   const [selectedAlgorithm, setSelectedAlgorithm] = useState("bubble");
 
+  const [mergeRange, setMergeRange] = useState<number[]>([]);
+  const [mergeWriting, setMergeWriting] = useState<number | null>(null);
+
+  const [pivotIndex, setPivotIndex] = useState<number | null>(null);
+
   function resetVisualization() {
     setComparing([]);
     setCurrentMin(null);
@@ -28,6 +33,9 @@ function App() {
     setSortedIndices([]);
     setComparisons(0);
     setSwaps(0);
+    setMergeRange([]);
+    setMergeWriting(null);
+    setPivotIndex(null);
   }
 
   function generateNewArray() {
@@ -187,6 +195,186 @@ function App() {
     setIsSorting(false);
   }
 
+  async function mergeSort() {
+    setIsSorting(true);
+    resetVisualization();
+
+    const workingArray = [...array];
+
+    async function merge(left: number, middle: number, right: number) {
+      const leftArray = workingArray.slice(left, middle + 1);
+      const rightArray = workingArray.slice(middle + 1, right + 1);
+
+      setMergeRange(
+        Array.from({ length: right - left + 1 }, (_, index) => left + index),
+      );
+
+      let i = 0;
+      let j = 0;
+      let k = left;
+
+      while (i < leftArray.length && j < rightArray.length) {
+        setComparing([left + i, middle + 1 + j]);
+        setComparisons((count) => count + 1);
+
+        await sleep(speedRef.current);
+
+        if (leftArray[i] <= rightArray[j]) {
+          workingArray[k] = leftArray[i];
+          i++;
+        } else {
+          workingArray[k] = rightArray[j];
+          j++;
+        }
+
+        setMergeWriting(k);
+        setArray([...workingArray]);
+
+        await sleep(speedRef.current);
+
+        k++;
+      }
+
+      while (i < leftArray.length) {
+        workingArray[k] = leftArray[i];
+
+        setMergeWriting(k);
+        setArray([...workingArray]);
+
+        i++;
+        k++;
+
+        await sleep(speedRef.current);
+      }
+
+      while (j < rightArray.length) {
+        workingArray[k] = rightArray[j];
+
+        setMergeWriting(k);
+        setArray([...workingArray]);
+
+        j++;
+        k++;
+
+        await sleep(speedRef.current);
+      }
+
+      setComparing([]);
+      setMergeWriting(null);
+    }
+
+    async function divide(left: number, right: number): Promise<void> {
+      if (left >= right) {
+        return;
+      }
+
+      const middle = Math.floor((left + right) / 2);
+
+      await divide(left, middle);
+      await divide(middle + 1, right);
+
+      await merge(left, middle, right);
+    }
+
+    await divide(0, workingArray.length - 1);
+
+    setMergeRange([]);
+    setMergeWriting(null);
+    setComparing([]);
+
+    setSortedIndices(
+      Array.from({ length: workingArray.length }, (_, index) => index),
+    );
+
+    setIsSorting(false);
+  }
+
+  async function quickSort() {
+    setIsSorting(true);
+    resetVisualization();
+
+    const workingArray = [...array];
+
+    async function partition(low: number, high: number) {
+      const pivotValue = workingArray[high];
+      setPivotIndex(high);
+
+      let i = low - 1;
+
+      for (let j = low; j < high; j++) {
+        setComparing([j]);
+        setComparisons((count) => count + 1);
+
+        await sleep(speedRef.current);
+
+        if (workingArray[j] < pivotValue) {
+          i++;
+
+          if (i !== j) {
+            const temp = workingArray[i];
+            workingArray[i] = workingArray[j];
+            workingArray[j] = temp;
+
+            setArray([...workingArray]);
+            setSwaps((count) => count + 1);
+
+            await sleep(speedRef.current);
+          }
+        }
+      }
+
+      const pivotPosition = i + 1;
+
+      if (pivotPosition !== high) {
+        const temp = workingArray[pivotPosition];
+        workingArray[pivotPosition] = workingArray[high];
+        workingArray[high] = temp;
+
+        setArray([...workingArray]);
+        setSwaps((count) => count + 1);
+
+        await sleep(speedRef.current);
+      }
+
+      setSortedIndices((indices) => [...indices, pivotPosition]);
+
+      setPivotIndex(null);
+      setComparing([]);
+
+      return pivotPosition;
+    }
+
+    async function sort(low: number, high: number): Promise<void> {
+      if (low > high) {
+        return;
+      }
+
+      if (low === high) {
+        setSortedIndices((indices) =>
+          indices.includes(low) ? indices : [...indices, low],
+        );
+
+        return;
+      }
+
+      const pivotPosition = await partition(low, high);
+
+      await sort(low, pivotPosition - 1);
+      await sort(pivotPosition + 1, high);
+    }
+
+    await sort(0, workingArray.length - 1);
+
+    setComparing([]);
+    setPivotIndex(null);
+
+    setSortedIndices(
+      Array.from({ length: workingArray.length }, (_, index) => index),
+    );
+
+    setIsSorting(false);
+  }
+
   function startSorting() {
     if (selectedAlgorithm === "bubble") {
       bubbleSort();
@@ -199,6 +387,38 @@ function App() {
     if (selectedAlgorithm === "insertion") {
       insertionSort();
     }
+
+    if (selectedAlgorithm === "merge") {
+      mergeSort();
+    }
+
+    if (selectedAlgorithm === "quick") {
+      quickSort();
+    }
+  }
+
+  function getTimeComplexity() {
+    if (selectedAlgorithm === "merge") {
+      return "O(n log n)";
+    }
+
+    if (selectedAlgorithm === "quick") {
+      return "O(n log n)";
+    }
+
+    return "O(n²)";
+  }
+
+  function getSpaceComplexity() {
+    if (selectedAlgorithm === "merge") {
+      return "O(n)";
+    }
+
+    if (selectedAlgorithm === "quick") {
+      return "O(log n)";
+    }
+
+    return "O(1)";
   }
 
   return (
@@ -304,10 +524,14 @@ function App() {
               <div
                 key={index}
                 className={`bar ${
-                  comparing.includes(index) ? "comparing" : ""
-                } ${currentMin === index ? "minimum" : ""} ${
-                  currentInsert === index ? "inserting" : ""
-                } ${sortedIndices.includes(index) ? "sorted" : ""}`}
+                  mergeRange.includes(index) ? "merge-range" : ""
+                } ${comparing.includes(index) ? "comparing" : ""} ${
+                  currentMin === index ? "minimum" : ""
+                } ${currentInsert === index ? "inserting" : ""} ${
+                  mergeWriting === index ? "merge-writing" : ""
+                } ${pivotIndex === index ? "pivot" : ""} ${
+                  sortedIndices.includes(index) ? "sorted" : ""
+                }`}
                 style={{ height: `${value * 3}px` }}
               >
                 <span>{value}</span>
@@ -335,6 +559,27 @@ function App() {
               </div>
             )}
 
+            {selectedAlgorithm === "merge" && (
+              <>
+                <div>
+                  <span className="legend-box merge-range-box"></span>
+                  Merge Range
+                </div>
+
+                <div>
+                  <span className="legend-box merge-writing-box"></span>
+                  Writing
+                </div>
+              </>
+            )}
+
+            {selectedAlgorithm === "quick" && (
+              <div>
+                <span className="legend-box pivot-box"></span>
+                Pivot
+              </div>
+            )}
+
             <div>
               <span className="legend-box sorted-box"></span>
               Sorted
@@ -355,12 +600,12 @@ function App() {
 
           <div>
             <span>Time Complexity</span>
-            <strong>O(n²)</strong>
+            <strong>{getTimeComplexity()}</strong>{" "}
           </div>
 
           <div>
             <span>Space Complexity</span>
-            <strong>O(1)</strong>
+            <strong>{getSpaceComplexity()}</strong>
           </div>
         </section>
       </main>
