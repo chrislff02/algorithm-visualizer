@@ -40,6 +40,18 @@ function App() {
   const [searchComparisons, setSearchComparisons] = useState(0);
   const [isSearching, setIsSearching] = useState(false);
 
+  const ROWS = 12;
+  const COLS = 20;
+
+  const [walls, setWalls] = useState<string[]>([]);
+
+  const startNode = { row: 5, col: 3 };
+  const endNode = { row: 5, col: 16 };
+
+  const [visitedNodes, setVisitedNodes] = useState<string[]>([]);
+  const [pathNodes, setPathNodes] = useState<string[]>([]);
+  const [isPathfinding, setIsPathfinding] = useState(false);
+
   function resetVisualization() {
     setComparing([]);
     setSortedIndices([]);
@@ -524,6 +536,111 @@ function App() {
     setIsSearching(false);
   }
 
+  function toggleWall(row: number, col: number) {
+    const key = `${row}-${col}`;
+
+    const isStart = row === startNode.row && col === startNode.col;
+
+    const isEnd = row === endNode.row && col === endNode.col;
+
+    if (isStart || isEnd) {
+      return;
+    }
+
+    setWalls((currentWalls) => {
+      if (currentWalls.includes(key)) {
+        return currentWalls.filter((wall) => wall !== key);
+      }
+
+      return [...currentWalls, key];
+    });
+  }
+
+  async function bfsPathfinding() {
+    setIsPathfinding(true);
+    setVisitedNodes([]);
+    setPathNodes([]);
+
+    const startKey = `${startNode.row}-${startNode.col}`;
+    const endKey = `${endNode.row}-${endNode.col}`;
+
+    const queue: string[] = [startKey];
+    const visited = new Set<string>([startKey]);
+
+    const parents = new Map<string, string | null>();
+    parents.set(startKey, null);
+
+    const directions = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ];
+
+    while (queue.length > 0) {
+      const currentKey = queue.shift();
+
+      if (!currentKey) {
+        break;
+      }
+
+      const [row, col] = currentKey.split("-").map(Number);
+
+      if (currentKey !== startKey && currentKey !== endKey) {
+        setVisitedNodes((nodes) => [...nodes, currentKey]);
+
+        await sleep(speedRef.current / 3);
+      }
+
+      if (currentKey === endKey) {
+        const path: string[] = [];
+
+        let current: string | null = endKey;
+
+        while (current !== null) {
+          path.unshift(current);
+          current = parents.get(current) ?? null;
+        }
+
+        for (const node of path) {
+          if (node !== startKey && node !== endKey) {
+            setPathNodes((nodes) => [...nodes, node]);
+
+            await sleep(speedRef.current / 2);
+          }
+        }
+
+        setIsPathfinding(false);
+        return;
+      }
+
+      for (const [rowChange, colChange] of directions) {
+        const newRow = row + rowChange;
+        const newCol = col + colChange;
+
+        if (newRow < 0 || newRow >= ROWS || newCol < 0 || newCol >= COLS) {
+          continue;
+        }
+
+        const neighborKey = `${newRow}-${newCol}`;
+
+        if (walls.includes(neighborKey)) {
+          continue;
+        }
+
+        if (visited.has(neighborKey)) {
+          continue;
+        }
+
+        visited.add(neighborKey);
+        parents.set(neighborKey, currentKey);
+        queue.push(neighborKey);
+      }
+    }
+
+    setIsPathfinding(false);
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -638,11 +755,15 @@ function App() {
               </button>
 
               <button
-                className="primary-button"
-                onClick={startSorting}
-                disabled={isSorting}
+                className="secondary-button"
+                onClick={() => {
+                  setWalls([]);
+                  setVisitedNodes([]);
+                  setPathNodes([]);
+                }}
+                disabled={isPathfinding}
               >
-                {isSorting ? "Sorting..." : "Start"}
+                Clear Walls
               </button>
             </section>
 
@@ -869,10 +990,117 @@ function App() {
         )}
 
         {activeSection === "pathfinding" && (
-          <section className="placeholder-panel">
-            <h2>Pathfinding Visualizer</h2>
-            <p>Pathfinding algorithms will go here later.</p>
-          </section>
+          <>
+            <section className="controls-panel">
+              <div>
+                <label>Algorithm</label>
+
+                <select>
+                  <option>BFS</option>
+                </select>
+              </div>
+
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setWalls([]);
+                  setVisitedNodes([]);
+                  setPathNodes([]);
+                }}
+                disabled={isPathfinding}
+              >
+                Clear Walls
+              </button>
+              <button
+                className="secondary-button"
+                onClick={() => {
+                  setVisitedNodes([]);
+                  setPathNodes([]);
+                }}
+                disabled={isPathfinding}
+              >
+                Reset Path
+              </button>
+              <button
+                className="primary-button"
+                onClick={bfsPathfinding}
+                disabled={isPathfinding}
+              >
+                {isPathfinding ? "Searching..." : "Start Pathfinding"}
+              </button>
+            </section>
+
+            <section className="pathfinding-panel">
+              <div
+                className="path-grid"
+                style={{
+                  gridTemplateColumns: `repeat(${COLS}, 1fr)`,
+                }}
+              >
+                {Array.from({ length: ROWS * COLS }).map((_, index) => {
+                  const row = Math.floor(index / COLS);
+                  const col = index % COLS;
+
+                  const key = `${row}-${col}`;
+
+                  const isStart =
+                    row === startNode.row && col === startNode.col;
+
+                  const isEnd = row === endNode.row && col === endNode.col;
+
+                  const isWall = walls.includes(key);
+
+                  return (
+                    <button
+                      key={key}
+                      className={`grid-node ${
+                        visitedNodes.includes(key) ? "visited-node" : ""
+                      } ${pathNodes.includes(key) ? "path-node" : ""} ${
+                        isWall ? "wall-node" : ""
+                      } ${isStart ? "start-node" : ""} ${
+                        isEnd ? "end-node" : ""
+                      }`}
+                      onClick={() => {
+                        if (!isPathfinding) {
+                          toggleWall(row, col);
+                        }
+                      }}
+                      aria-label={`Row ${row + 1}, Column ${col + 1}`}
+                    >
+                      {isStart ? "S" : isEnd ? "E" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="legend">
+                <div>
+                  <span className="legend-box start-box"></span>
+                  Start
+                </div>
+
+                <div>
+                  <span className="legend-box end-box"></span>
+                  End
+                </div>
+
+                <div>
+                  <span className="legend-box wall-box"></span>
+                  Wall
+                </div>
+
+                <div>
+                  <span className="legend-box visited-box"></span>
+                  Visited
+                </div>
+
+                <div>
+                  <span className="legend-box path-box"></span>
+                  Shortest Path
+                </div>
+              </div>
+            </section>
+          </>
         )}
 
         {activeSection === "graphs" && (

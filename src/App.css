@@ -436,3 +436,97 @@ select:disabled {
 .search-found-box {
   background: #4ade80;
 }
+
+.pathfinding-panel {
+  margin-top: 24px;
+  padding: 24px;
+
+  background: #171a20;
+  border: 1px solid #2b2f38;
+  border-radius: 12px;
+}
+
+.path-grid {
+  display: grid;
+  gap: 2px;
+
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.grid-node {
+  aspect-ratio: 1;
+
+  border: 1px solid #343843;
+  background: #20242b;
+  color: #111318;
+
+  padding: 0;
+  cursor: pointer;
+
+  font-size: 0.75rem;
+  font-weight: 700;
+
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+
+.grid-node:hover {
+  background: #2d323c;
+}
+
+.start-node {
+  background: #4ade80;
+}
+
+.end-node {
+  background: #fb7185;
+}
+
+.wall-node {
+  background: #64748b;
+}
+
+.start-box {
+  background: #4ade80;
+}
+
+.end-box {
+  background: #fb7185;
+}
+
+.wall-box {
+  background: #64748b;
+}
+
+@media (max-width: 700px) {
+  .pathfinding-panel {
+    padding: 14px;
+  }
+
+  .path-grid {
+    gap: 1px;
+  }
+
+  .grid-node {
+    font-size: 0.6rem;
+  }
+}
+
+.visited-node {
+  background: #60a5fa;
+}
+
+.path-node {
+  background: #facc15;
+}
+
+.visited-box {
+  background: #60a5fa;
+}
+
+.path-box {
+  background: #facc15;
+}
