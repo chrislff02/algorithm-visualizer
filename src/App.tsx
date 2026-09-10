@@ -15,37 +15,19 @@ const COLS = 20;
 const START_NODE = { row: 5, col: 3 };
 const END_NODE = { row: 5, col: 16 };
 
-const GRAPH_NODES: GraphNode[] = [
-  { id: "A", x: 15, y: 50 },
-  { id: "B", x: 32, y: 25 },
-  { id: "C", x: 32, y: 75 },
-  { id: "D", x: 52, y: 20 },
-  { id: "E", x: 52, y: 50 },
-  { id: "F", x: 52, y: 80 },
-  { id: "G", x: 75, y: 50 },
-];
+function getNextNodeId(nodes: GraphNode[]) {
+  let index = 0;
 
-const GRAPH_ADJACENCY: Record<string, string[]> = {
-  A: ["B", "C"],
-  B: ["A", "D", "E"],
-  C: ["A", "E", "F"],
-  D: ["B", "G"],
-  E: ["B", "C", "G"],
-  F: ["C", "G"],
-  G: ["D", "E", "F"],
-};
+  while (true) {
+    const id = String.fromCharCode(65 + index);
 
-const GRAPH_EDGES = [
-  ["A", "B"],
-  ["A", "C"],
-  ["B", "D"],
-  ["B", "E"],
-  ["C", "E"],
-  ["C", "F"],
-  ["D", "G"],
-  ["E", "G"],
-  ["F", "G"],
-];
+    if (!nodes.some((node) => node.id === id)) {
+      return id;
+    }
+
+    index++;
+  }
+}
 
 type Section = "sorting" | "searching" | "pathfinding" | "graphs";
 
@@ -69,6 +51,28 @@ type GraphNode = {
   x: number;
   y: number;
 };
+
+const DEFAULT_GRAPH_NODES: GraphNode[] = [
+  { id: "A", x: 15, y: 50 },
+  { id: "B", x: 32, y: 25 },
+  { id: "C", x: 32, y: 75 },
+  { id: "D", x: 52, y: 20 },
+  { id: "E", x: 52, y: 50 },
+  { id: "F", x: 52, y: 80 },
+  { id: "G", x: 75, y: 50 },
+];
+
+const DEFAULT_GRAPH_EDGES: [string, string][] = [
+  ["A", "B"],
+  ["A", "C"],
+  ["B", "D"],
+  ["B", "E"],
+  ["C", "E"],
+  ["C", "F"],
+  ["D", "G"],
+  ["E", "G"],
+  ["F", "G"],
+];
 
 /* ----------------------------- */
 /* App                           */
@@ -156,14 +160,24 @@ function App() {
     useState<GraphAlgorithm>("bfs");
 
   const [graphStartNode, setGraphStartNode] = useState("A");
+  const [selectedGraphNode, setSelectedGraphNode] = useState<string | null>(
+    null,
+  );
+  const [graphMode, setGraphMode] = useState<
+    "connect" | "delete-node" | "delete-edge"
+  >("connect");
+
+  const [graphNodes, setGraphNodes] =
+    useState<GraphNode[]>(DEFAULT_GRAPH_NODES);
+
+  const [graphEdges, setGraphEdges] =
+    useState<[string, string][]>(DEFAULT_GRAPH_EDGES);
 
   const [graphVisited, setGraphVisited] = useState<string[]>([]);
-
   const [graphCurrent, setGraphCurrent] = useState<string | null>(null);
-
   const [graphTraversalOrder, setGraphTraversalOrder] = useState<string[]>([]);
-
   const [isGraphRunning, setIsGraphRunning] = useState(false);
+  const [draggingNode, setDraggingNode] = useState<string | null>(null);
 
   /* --------------------------- */
   /* Shared Helpers              */
@@ -1248,11 +1262,129 @@ function App() {
     setGraphVisited([]);
     setGraphCurrent(null);
     setGraphTraversalOrder([]);
+    setSelectedGraphNode(null);
+  }
+
+  function getGraphAdjacency() {
+    const adjacency: Record<string, string[]> = {};
+
+    for (const node of graphNodes) {
+      adjacency[node.id] = [];
+    }
+
+    for (const [from, to] of graphEdges) {
+      if (adjacency[from] && adjacency[to]) {
+        adjacency[from].push(to);
+        adjacency[to].push(from);
+      }
+    }
+
+    return adjacency;
+  }
+
+  function addGraphNode(event: React.MouseEvent<HTMLDivElement>) {
+    if (
+      isGraphRunning ||
+      graphMode === "delete-node" ||
+      graphMode === "delete-edge"
+    ) {
+      return;
+    }
+
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    const id = getNextNodeId(graphNodes);
+
+    setGraphNodes((nodes) => [
+      ...nodes,
+      {
+        id,
+        x,
+        y,
+      },
+    ]);
+
+    resetGraphVisualization();
+  }
+
+  function handleGraphNodeClick(nodeId: string) {
+    if (isGraphRunning) {
+      return;
+    }
+
+    if (graphMode === "delete-node") {
+      const remainingNodes = graphNodes.filter((node) => node.id !== nodeId);
+
+      setGraphNodes(remainingNodes);
+
+      setGraphEdges((edges) =>
+        edges.filter(([from, to]) => from !== nodeId && to !== nodeId),
+      );
+
+      if (graphStartNode === nodeId) {
+        setGraphStartNode(remainingNodes[0]?.id ?? "");
+      }
+
+      setSelectedGraphNode(null);
+      resetGraphVisualization();
+
+      return;
+    }
+
+    if (selectedGraphNode === null) {
+      setSelectedGraphNode(nodeId);
+      return;
+    }
+
+    if (selectedGraphNode === nodeId) {
+      setSelectedGraphNode(null);
+      return;
+    }
+
+    if (graphMode === "connect") {
+      const edgeExists = graphEdges.some(
+        ([from, to]) =>
+          (from === selectedGraphNode && to === nodeId) ||
+          (from === nodeId && to === selectedGraphNode),
+      );
+
+      if (!edgeExists) {
+        setGraphEdges((edges) => [...edges, [selectedGraphNode, nodeId]]);
+      }
+    }
+
+    if (graphMode === "delete-edge") {
+      setGraphEdges((edges) =>
+        edges.filter(
+          ([from, to]) =>
+            !(
+              (from === selectedGraphNode && to === nodeId) ||
+              (from === nodeId && to === selectedGraphNode)
+            ),
+        ),
+      );
+    }
+
+    setSelectedGraphNode(null);
+    resetGraphVisualization();
   }
 
   async function graphBfs() {
+    if (!graphStartNode) {
+      return;
+    }
+
     setIsGraphRunning(true);
     resetGraphVisualization();
+
+    const adjacency = getGraphAdjacency();
 
     const queue: string[] = [graphStartNode];
     const visited = new Set<string>([graphStartNode]);
@@ -1271,7 +1403,7 @@ function App() {
       setGraphVisited((nodes) => [...nodes, current]);
       setGraphTraversalOrder((nodes) => [...nodes, current]);
 
-      for (const neighbor of GRAPH_ADJACENCY[current]) {
+      for (const neighbor of adjacency[current] ?? []) {
         if (!visited.has(neighbor)) {
           visited.add(neighbor);
           queue.push(neighbor);
@@ -1286,8 +1418,14 @@ function App() {
   }
 
   async function graphDfs() {
+    if (!graphStartNode) {
+      return;
+    }
+
     setIsGraphRunning(true);
     resetGraphVisualization();
+
+    const adjacency = getGraphAdjacency();
 
     const stack: string[] = [graphStartNode];
     const visited = new Set<string>();
@@ -1312,7 +1450,7 @@ function App() {
       setGraphVisited((nodes) => [...nodes, current]);
       setGraphTraversalOrder((nodes) => [...nodes, current]);
 
-      const neighbors = GRAPH_ADJACENCY[current];
+      const neighbors = adjacency[current] ?? [];
 
       for (let i = neighbors.length - 1; i >= 0; i--) {
         const neighbor = neighbors[i];
@@ -1330,11 +1468,62 @@ function App() {
   }
 
   function startGraphTraversal() {
+    if (!graphStartNode) {
+      return;
+    }
+
     if (selectedGraphAlgorithm === "bfs") {
       void graphBfs();
     } else {
       void graphDfs();
     }
+  }
+
+  function moveGraphNode(event: React.MouseEvent<HTMLDivElement>) {
+    if (!draggingNode || isGraphRunning) {
+      return;
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    let x = ((event.clientX - rect.left) / rect.width) * 100;
+    let y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    x = Math.max(4, Math.min(96, x));
+    y = Math.max(7, Math.min(93, y));
+
+    setGraphNodes((nodes) =>
+      nodes.map((node) =>
+        node.id === draggingNode
+          ? {
+              ...node,
+              x,
+              y,
+            }
+          : node,
+      ),
+    );
+  }
+
+  function clearGraph() {
+    setGraphNodes([]);
+    setGraphEdges([]);
+    setGraphStartNode("");
+    setSelectedGraphNode(null);
+    setDraggingNode(null);
+
+    resetGraphVisualization();
+  }
+
+  function resetDefaultGraph() {
+    setGraphNodes(DEFAULT_GRAPH_NODES);
+    setGraphEdges(DEFAULT_GRAPH_EDGES);
+    setGraphStartNode("A");
+    setSelectedGraphNode(null);
+    setDraggingNode(null);
+    setGraphMode("connect");
+
+    resetGraphVisualization();
   }
 
   return (
@@ -1891,7 +2080,7 @@ function App() {
 
         {activeSection === "graphs" && (
           <>
-            <section className="controls-panel">
+            <section className="controls-panel graph-controls-panel">
               <div>
                 <label>Algorithm</label>
 
@@ -1916,17 +2105,40 @@ function App() {
 
                 <select
                   value={graphStartNode}
-                  disabled={isGraphRunning}
+                  disabled={isGraphRunning || graphNodes.length === 0}
                   onChange={(event) => {
                     setGraphStartNode(event.target.value);
                     resetGraphVisualization();
                   }}
                 >
-                  {GRAPH_NODES.map((node) => (
+                  {graphNodes.map((node) => (
                     <option key={node.id} value={node.id}>
                       {node.id}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label>Graph Tool</label>
+
+                <select
+                  value={graphMode}
+                  disabled={isGraphRunning}
+                  onChange={(event) => {
+                    setGraphMode(
+                      event.target.value as
+                        | "connect"
+                        | "delete-node"
+                        | "delete-edge",
+                    );
+
+                    setSelectedGraphNode(null);
+                  }}
+                >
+                  <option value="connect">Connect / Move</option>
+                  <option value="delete-node">Delete Node</option>
+                  <option value="delete-edge">Delete Edge</option>
                 </select>
               </div>
 
@@ -1944,31 +2156,53 @@ function App() {
               </div>
 
               <button
-                className="secondary-button"
-                onClick={resetGraphVisualization}
+                className="secondary-button clear-graph-button"
+                onClick={clearGraph}
                 disabled={isGraphRunning}
               >
-                Reset
+                Clear Graph
               </button>
 
               <button
-                className="primary-button"
-                onClick={startGraphTraversal}
+                className="secondary-button reset-default-button"
+                onClick={resetDefaultGraph}
                 disabled={isGraphRunning}
+              >
+                Reset Default
+              </button>
+
+              <button
+                className="secondary-button reset-traversal-button"
+                onClick={resetGraphVisualization}
+                disabled={isGraphRunning}
+              >
+                Reset Traversal
+              </button>
+
+              <button
+                className="primary-button start-traversal-button"
+                onClick={startGraphTraversal}
+                disabled={isGraphRunning || graphNodes.length === 0}
               >
                 {isGraphRunning ? "Traversing..." : "Start Traversal"}
               </button>
             </section>
 
             <section className="graph-panel">
-              <div className="graph-canvas">
+              <div
+                className="graph-canvas"
+                onClick={addGraphNode}
+                onMouseMove={moveGraphNode}
+                onMouseUp={() => setDraggingNode(null)}
+                onMouseLeave={() => setDraggingNode(null)}
+              >
                 <svg className="graph-edges">
-                  {GRAPH_EDGES.map(([from, to]) => {
-                    const fromNode = GRAPH_NODES.find(
+                  {graphEdges.map(([from, to]) => {
+                    const fromNode = graphNodes.find(
                       (node) => node.id === from,
                     );
 
-                    const toNode = GRAPH_NODES.find((node) => node.id === to);
+                    const toNode = graphNodes.find((node) => node.id === to);
 
                     if (!fromNode || !toNode) {
                       return null;
@@ -1986,22 +2220,54 @@ function App() {
                   })}
                 </svg>
 
-                {GRAPH_NODES.map((node) => (
+                {graphNodes.map((node) => (
                   <button
                     key={node.id}
                     className={`graph-node ${
                       graphVisited.includes(node.id) ? "graph-node-visited" : ""
                     } ${graphCurrent === node.id ? "graph-node-current" : ""} ${
                       graphStartNode === node.id ? "graph-node-start" : ""
-                    }`}
+                    } ${
+                      selectedGraphNode === node.id ? "graph-node-selected" : ""
+                    } ${draggingNode === node.id ? "graph-node-dragging" : ""}`}
                     style={{
                       left: `${node.x}%`,
                       top: `${node.y}%`,
                     }}
                     disabled={isGraphRunning}
-                    onClick={() => {
-                      setGraphStartNode(node.id);
-                      resetGraphVisualization();
+                    onMouseDown={(event) => {
+                      event.stopPropagation();
+
+                      if (isGraphRunning) {
+                        return;
+                      }
+
+                      if (graphMode === "connect" && !event.shiftKey) {
+                        setDraggingNode(node.id);
+                      }
+                    }}
+                    onMouseUp={(event) => {
+                      event.stopPropagation();
+                      setDraggingNode(null);
+                    }}
+                    onClick={(event) => {
+                      event.stopPropagation();
+
+                      if (isGraphRunning) {
+                        return;
+                      }
+
+                      if (graphMode === "connect" && event.shiftKey) {
+                        handleGraphNodeClick(node.id);
+                        return;
+                      }
+
+                      if (
+                        graphMode === "delete-node" ||
+                        graphMode === "delete-edge"
+                      ) {
+                        handleGraphNodeClick(node.id);
+                      }
                     }}
                   >
                     {node.id}
@@ -2024,6 +2290,11 @@ function App() {
                   <span className="legend-box graph-visited-box" />
                   Visited
                 </div>
+
+                <div>
+                  <span className="legend-box graph-selected-box" />
+                  Selected
+                </div>
               </div>
             </section>
 
@@ -2037,7 +2308,7 @@ function App() {
 
               <div>
                 <span>Start Node</span>
-                <strong>{graphStartNode}</strong>
+                <strong>{graphStartNode || "—"}</strong>
               </div>
 
               <div>
