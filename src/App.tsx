@@ -123,7 +123,7 @@ function App() {
   const [selectedSearchAlgorithm, setSelectedSearchAlgorithm] =
     useState<SearchAlgorithm>("binary");
 
-  const [searchTarget, setSearchTarget] = useState(53);
+  const [searchTarget, setSearchTarget] = useState("53");
 
   const [searchMiddle, setSearchMiddle] = useState<number | null>(null);
 
@@ -134,6 +134,10 @@ function App() {
   const [searchComparisons, setSearchComparisons] = useState(0);
 
   const [isSearching, setIsSearching] = useState(false);
+
+  const [searchArraySize, setSearchArraySize] = useState(9);
+
+  const [searchArray, setSearchArray] = useState<number[]>(SEARCH_ARRAY);
 
   /* --------------------------- */
   /* Pathfinding                 */
@@ -641,19 +645,55 @@ function App() {
     setSearchComparisons(0);
   }
 
+  function createUniqueSortedSearchArray(size: number) {
+    const values = new Set<number>();
+
+    while (values.size < size) {
+      values.add(Math.floor(Math.random() * 90) + 10);
+    }
+
+    return Array.from(values).sort((a, b) => a - b);
+  }
+
+  function generateSearchArray(size = searchArraySize) {
+    const newArray = createUniqueSortedSearchArray(size);
+
+    setSearchArray(newArray);
+    resetSearchVisualization();
+  }
+
+  function changeSearchArraySize(newSize: number) {
+    setSearchArraySize(newSize);
+
+    const newArray = createUniqueSortedSearchArray(newSize);
+
+    setSearchArray(newArray);
+    resetSearchVisualization();
+  }
+
   async function linearSearch() {
     setIsSearching(true);
     resetSearchVisualization();
 
-    for (let i = 0; i < SEARCH_ARRAY.length; i++) {
+    const target = Number(searchTarget);
+
+    if (searchTarget === "") {
+      setIsSearching(false);
+      return;
+    }
+
+    for (let i = 0; i < searchArray.length; i++) {
       setSearchMiddle(i);
       setSearchComparisons((count) => count + 1);
 
       await sleep(speedRef.current);
 
-      if (SEARCH_ARRAY[i] === searchTarget) {
+      if (searchArray[i] === target) {
         setFoundIndex(i);
         setSearchMiddle(null);
+        setEliminatedIndices((indices) =>
+          indices.filter((index) => index !== i),
+        );
         setIsSearching(false);
 
         return;
@@ -672,8 +712,15 @@ function App() {
     setIsSearching(true);
     resetSearchVisualization();
 
+    const target = Number(searchTarget);
+
+    if (searchTarget === "") {
+      setIsSearching(false);
+      return;
+    }
+
     let left = 0;
-    let right = SEARCH_ARRAY.length - 1;
+    let right = searchArray.length - 1;
 
     while (left <= right) {
       const middle = Math.floor((left + right) / 2);
@@ -684,15 +731,18 @@ function App() {
 
       await sleep(speedRef.current);
 
-      if (SEARCH_ARRAY[middle] === searchTarget) {
+      if (searchArray[middle] === target) {
         setFoundIndex(middle);
         setSearchMiddle(null);
+        setEliminatedIndices((indices) =>
+          indices.filter((index) => index !== middle),
+        );
         setIsSearching(false);
 
         return;
       }
 
-      if (SEARCH_ARRAY[middle] < searchTarget) {
+      if (searchArray[middle] < target) {
         const eliminated = Array.from(
           {
             length: middle - left + 1,
@@ -1573,7 +1623,7 @@ function App() {
 
         {activeSection === "sorting" && (
           <>
-            <section className="controls-panel">
+            <section className="controls-panel sorting-controls-panel">
               <div>
                 <label>Algorithm</label>
 
@@ -1750,7 +1800,7 @@ function App() {
 
         {activeSection === "searching" && (
           <>
-            <section className="controls-panel">
+            <section className="controls-panel searching-controls-panel">
               <div>
                 <label>Algorithm</label>
 
@@ -1766,7 +1816,6 @@ function App() {
                   }}
                 >
                   <option value="binary">Binary Search</option>
-
                   <option value="linear">Linear Search</option>
                 </select>
               </div>
@@ -1780,10 +1829,24 @@ function App() {
                   value={searchTarget}
                   disabled={isSearching}
                   onChange={(event) => {
-                    setSearchTarget(Number(event.target.value));
-
+                    setSearchTarget(event.target.value);
                     resetSearchVisualization();
                   }}
+                />
+              </div>
+
+              <div className="size-control">
+                <label>Array Size: {searchArraySize}</label>
+
+                <input
+                  type="range"
+                  min="5"
+                  max="20"
+                  value={searchArraySize}
+                  disabled={isSearching}
+                  onChange={(event) =>
+                    changeSearchArraySize(Number(event.target.value))
+                  }
                 />
               </div>
 
@@ -1801,6 +1864,14 @@ function App() {
               </div>
 
               <button
+                className="secondary-button"
+                onClick={() => generateSearchArray()}
+                disabled={isSearching}
+              >
+                Generate New Array
+              </button>
+
+              <button
                 className="primary-button"
                 onClick={startSearch}
                 disabled={isSearching}
@@ -1811,7 +1882,7 @@ function App() {
 
             <section className="search-visualizer-panel">
               <div className="search-array">
-                {SEARCH_ARRAY.map((value, index) => (
+                {searchArray.map((value, index) => (
                   <div
                     key={index}
                     className={`search-item ${
@@ -1882,7 +1953,7 @@ function App() {
 
         {activeSection === "pathfinding" && (
           <>
-            <section className="controls-panel">
+            <section className="controls-panel pathfinding-controls-panel">
               <div>
                 <label>Algorithm</label>
 

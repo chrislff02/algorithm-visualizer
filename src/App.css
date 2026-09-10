@@ -763,3 +763,87 @@ select:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* -------------------------------- */
+/* Section control layout polish    */
+/* -------------------------------- */
+
+.sorting-controls-panel,
+.searching-controls-panel,
+.pathfinding-controls-panel {
+  display: grid;
+  align-items: end;
+  gap: 18px;
+}
+
+.sorting-controls-panel {
+  grid-template-columns:
+    minmax(180px, 1.1fr)
+    minmax(160px, 1fr)
+    minmax(160px, 1fr)
+    minmax(180px, 1fr)
+    minmax(100px, 0.6fr);
+}
+
+.searching-controls-panel {
+  grid-template-columns:
+    minmax(170px, 1fr)
+    minmax(100px, 0.6fr)
+    minmax(150px, 1fr)
+    minmax(150px, 1fr)
+    minmax(170px, 1fr)
+    minmax(140px, 0.8fr);
+}
+
+.pathfinding-controls-panel {
+  grid-template-columns:
+    minmax(180px, 1fr)
+    minmax(180px, 1fr)
+    minmax(180px, 1fr)
+    minmax(140px, 0.8fr)
+    minmax(140px, 0.8fr)
+    minmax(170px, 0.9fr);
+}
+
+.sorting-controls-panel > *,
+.searching-controls-panel > *,
+.pathfinding-controls-panel > * {
+  min-width: 0;
+}
+
+.sorting-controls-panel button,
+.searching-controls-panel button,
+.pathfinding-controls-panel button {
+  width: 100%;
+}
+
+.sorting-controls-panel select,
+.searching-controls-panel select,
+.pathfinding-controls-panel select {
+  width: 100%;
+  min-width: 0;
+}
+
+.sorting-controls-panel .size-control input,
+.sorting-controls-panel .speed-control input,
+.searching-controls-panel .speed-control input,
+.pathfinding-controls-panel .speed-control input {
+  width: 100%;
+}
+
+@media (max-width: 1000px) {
+  .sorting-controls-panel,
+  .searching-controls-panel,
+  .pathfinding-controls-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 550px) {
+  .sorting-controls-panel,
+  .searching-controls-panel,
+  .pathfinding-controls-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
