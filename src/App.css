@@ -538,3 +538,112 @@ select:disabled {
 .weight-box {
   background: #c084fc;
 }
+
+.graph-panel {
+  margin-top: 24px;
+  padding: 24px;
+
+  background: #171a20;
+  border: 1px solid #2b2f38;
+  border-radius: 12px;
+}
+
+.graph-canvas {
+  position: relative;
+
+  width: 100%;
+  height: 500px;
+
+  background: #111419;
+  border: 1px solid #2b2f38;
+  border-radius: 10px;
+
+  overflow: hidden;
+}
+
+.graph-edges {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  pointer-events: none;
+}
+
+.graph-edges line {
+  stroke: #64748b;
+  stroke-width: 3;
+}
+
+.graph-node {
+  position: absolute;
+
+  width: 58px;
+  height: 58px;
+
+  transform: translate(-50%, -50%);
+
+  border: 3px solid #d8dbe2;
+  border-radius: 50%;
+
+  background: #20242b;
+  color: #f5f5f5;
+
+  font-size: 1rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  z-index: 2;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.graph-node:hover:not(:disabled) {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.graph-node-visited {
+  background: #60a5fa;
+  color: #111318;
+}
+
+.graph-node-current {
+  background: #facc15;
+  color: #111318;
+
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.graph-node-start {
+  border-color: #4ade80;
+}
+
+.graph-start-box {
+  background: #4ade80;
+}
+
+.graph-current-box {
+  background: #facc15;
+}
+
+.graph-visited-box {
+  background: #60a5fa;
+}
+
+@media (max-width: 700px) {
+  .graph-canvas {
+    height: 380px;
+  }
+
+  .graph-node {
+    width: 46px;
+    height: 46px;
+
+    font-size: 0.85rem;
+  }
+}

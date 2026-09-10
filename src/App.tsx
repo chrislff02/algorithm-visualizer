@@ -15,6 +15,38 @@ const COLS = 20;
 const START_NODE = { row: 5, col: 3 };
 const END_NODE = { row: 5, col: 16 };
 
+const GRAPH_NODES: GraphNode[] = [
+  { id: "A", x: 15, y: 50 },
+  { id: "B", x: 32, y: 25 },
+  { id: "C", x: 32, y: 75 },
+  { id: "D", x: 52, y: 20 },
+  { id: "E", x: 52, y: 50 },
+  { id: "F", x: 52, y: 80 },
+  { id: "G", x: 75, y: 50 },
+];
+
+const GRAPH_ADJACENCY: Record<string, string[]> = {
+  A: ["B", "C"],
+  B: ["A", "D", "E"],
+  C: ["A", "E", "F"],
+  D: ["B", "G"],
+  E: ["B", "C", "G"],
+  F: ["C", "G"],
+  G: ["D", "E", "F"],
+};
+
+const GRAPH_EDGES = [
+  ["A", "B"],
+  ["A", "C"],
+  ["B", "D"],
+  ["B", "E"],
+  ["C", "E"],
+  ["C", "F"],
+  ["D", "G"],
+  ["E", "G"],
+  ["F", "G"],
+];
+
 type Section = "sorting" | "searching" | "pathfinding" | "graphs";
 
 type SortingAlgorithm =
@@ -29,6 +61,14 @@ type SearchAlgorithm = "binary" | "linear";
 type PathAlgorithm = "bfs" | "dfs" | "dijkstra" | "astar";
 
 type GridMode = "wall" | "weight";
+
+type GraphAlgorithm = "bfs" | "dfs";
+
+type GraphNode = {
+  id: string;
+  x: number;
+  y: number;
+};
 
 /* ----------------------------- */
 /* App                           */
@@ -107,6 +147,23 @@ function App() {
   const [pathNodes, setPathNodes] = useState<string[]>([]);
 
   const [isPathfinding, setIsPathfinding] = useState(false);
+
+  /* --------------------------- */
+  /* Graphs                      */
+  /* --------------------------- */
+
+  const [selectedGraphAlgorithm, setSelectedGraphAlgorithm] =
+    useState<GraphAlgorithm>("bfs");
+
+  const [graphStartNode, setGraphStartNode] = useState("A");
+
+  const [graphVisited, setGraphVisited] = useState<string[]>([]);
+
+  const [graphCurrent, setGraphCurrent] = useState<string | null>(null);
+
+  const [graphTraversalOrder, setGraphTraversalOrder] = useState<string[]>([]);
+
+  const [isGraphRunning, setIsGraphRunning] = useState(false);
 
   /* --------------------------- */
   /* Shared Helpers              */
@@ -1187,6 +1244,99 @@ function App() {
   /* Render                      */
   /* --------------------------- */
 
+  function resetGraphVisualization() {
+    setGraphVisited([]);
+    setGraphCurrent(null);
+    setGraphTraversalOrder([]);
+  }
+
+  async function graphBfs() {
+    setIsGraphRunning(true);
+    resetGraphVisualization();
+
+    const queue: string[] = [graphStartNode];
+    const visited = new Set<string>([graphStartNode]);
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+
+      if (!current) {
+        break;
+      }
+
+      setGraphCurrent(current);
+
+      await sleep(speedRef.current);
+
+      setGraphVisited((nodes) => [...nodes, current]);
+      setGraphTraversalOrder((nodes) => [...nodes, current]);
+
+      for (const neighbor of GRAPH_ADJACENCY[current]) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+
+      await sleep(speedRef.current / 2);
+    }
+
+    setGraphCurrent(null);
+    setIsGraphRunning(false);
+  }
+
+  async function graphDfs() {
+    setIsGraphRunning(true);
+    resetGraphVisualization();
+
+    const stack: string[] = [graphStartNode];
+    const visited = new Set<string>();
+
+    while (stack.length > 0) {
+      const current = stack.pop();
+
+      if (!current) {
+        break;
+      }
+
+      if (visited.has(current)) {
+        continue;
+      }
+
+      visited.add(current);
+
+      setGraphCurrent(current);
+
+      await sleep(speedRef.current);
+
+      setGraphVisited((nodes) => [...nodes, current]);
+      setGraphTraversalOrder((nodes) => [...nodes, current]);
+
+      const neighbors = GRAPH_ADJACENCY[current];
+
+      for (let i = neighbors.length - 1; i >= 0; i--) {
+        const neighbor = neighbors[i];
+
+        if (!visited.has(neighbor)) {
+          stack.push(neighbor);
+        }
+      }
+
+      await sleep(speedRef.current / 2);
+    }
+
+    setGraphCurrent(null);
+    setIsGraphRunning(false);
+  }
+
+  function startGraphTraversal() {
+    if (selectedGraphAlgorithm === "bfs") {
+      void graphBfs();
+    } else {
+      void graphDfs();
+    }
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -1740,11 +1890,171 @@ function App() {
         {/* --------------------- */}
 
         {activeSection === "graphs" && (
-          <section className="placeholder-panel">
-            <h2>Graph Visualizer</h2>
+          <>
+            <section className="controls-panel">
+              <div>
+                <label>Algorithm</label>
 
-            <p>Graph traversal algorithms will go here next.</p>
-          </section>
+                <select
+                  value={selectedGraphAlgorithm}
+                  disabled={isGraphRunning}
+                  onChange={(event) => {
+                    setSelectedGraphAlgorithm(
+                      event.target.value as GraphAlgorithm,
+                    );
+
+                    resetGraphVisualization();
+                  }}
+                >
+                  <option value="bfs">BFS</option>
+                  <option value="dfs">DFS</option>
+                </select>
+              </div>
+
+              <div>
+                <label>Start Node</label>
+
+                <select
+                  value={graphStartNode}
+                  disabled={isGraphRunning}
+                  onChange={(event) => {
+                    setGraphStartNode(event.target.value);
+                    resetGraphVisualization();
+                  }}
+                >
+                  {GRAPH_NODES.map((node) => (
+                    <option key={node.id} value={node.id}>
+                      {node.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="speed-control">
+                <label>Speed: {speed} ms</label>
+
+                <input
+                  type="range"
+                  min="50"
+                  max="700"
+                  step="50"
+                  value={750 - speed}
+                  onChange={(event) => handleSpeedChange(event.target.value)}
+                />
+              </div>
+
+              <button
+                className="secondary-button"
+                onClick={resetGraphVisualization}
+                disabled={isGraphRunning}
+              >
+                Reset
+              </button>
+
+              <button
+                className="primary-button"
+                onClick={startGraphTraversal}
+                disabled={isGraphRunning}
+              >
+                {isGraphRunning ? "Traversing..." : "Start Traversal"}
+              </button>
+            </section>
+
+            <section className="graph-panel">
+              <div className="graph-canvas">
+                <svg className="graph-edges">
+                  {GRAPH_EDGES.map(([from, to]) => {
+                    const fromNode = GRAPH_NODES.find(
+                      (node) => node.id === from,
+                    );
+
+                    const toNode = GRAPH_NODES.find((node) => node.id === to);
+
+                    if (!fromNode || !toNode) {
+                      return null;
+                    }
+
+                    return (
+                      <line
+                        key={`${from}-${to}`}
+                        x1={`${fromNode.x}%`}
+                        y1={`${fromNode.y}%`}
+                        x2={`${toNode.x}%`}
+                        y2={`${toNode.y}%`}
+                      />
+                    );
+                  })}
+                </svg>
+
+                {GRAPH_NODES.map((node) => (
+                  <button
+                    key={node.id}
+                    className={`graph-node ${
+                      graphVisited.includes(node.id) ? "graph-node-visited" : ""
+                    } ${graphCurrent === node.id ? "graph-node-current" : ""} ${
+                      graphStartNode === node.id ? "graph-node-start" : ""
+                    }`}
+                    style={{
+                      left: `${node.x}%`,
+                      top: `${node.y}%`,
+                    }}
+                    disabled={isGraphRunning}
+                    onClick={() => {
+                      setGraphStartNode(node.id);
+                      resetGraphVisualization();
+                    }}
+                  >
+                    {node.id}
+                  </button>
+                ))}
+              </div>
+
+              <div className="legend">
+                <div>
+                  <span className="legend-box graph-start-box" />
+                  Start
+                </div>
+
+                <div>
+                  <span className="legend-box graph-current-box" />
+                  Current
+                </div>
+
+                <div>
+                  <span className="legend-box graph-visited-box" />
+                  Visited
+                </div>
+              </div>
+            </section>
+
+            <section className="info-panel">
+              <div>
+                <span>Algorithm</span>
+                <strong>
+                  {selectedGraphAlgorithm === "bfs" ? "BFS" : "DFS"}
+                </strong>
+              </div>
+
+              <div>
+                <span>Start Node</span>
+                <strong>{graphStartNode}</strong>
+              </div>
+
+              <div>
+                <span>Nodes Visited</span>
+                <strong>{graphVisited.length}</strong>
+              </div>
+
+              <div>
+                <span>Traversal Order</span>
+                <strong>
+                  {graphTraversalOrder.length > 0
+                    ? graphTraversalOrder.join(" → ")
+                    : "—"}
+                </strong>
+              </div>
+            </section>
+          </>
         )}
       </main>
     </div>
