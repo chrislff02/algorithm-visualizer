@@ -116,6 +116,10 @@ function App() {
   const [isSorting, setIsSorting] = useState(false);
   const [pathCost, setPathCost] = useState(0);
 
+  const [searchResult, setSearchResult] = useState<
+    "idle" | "found" | "not-found"
+  >("idle");
+
   /* --------------------------- */
   /* Searching                   */
   /* --------------------------- */
@@ -643,6 +647,7 @@ function App() {
     setEliminatedIndices([]);
     setFoundIndex(null);
     setSearchComparisons(0);
+    setSearchResult("idle");
   }
 
   function createUniqueSortedSearchArray(size: number) {
@@ -694,8 +699,8 @@ function App() {
         setEliminatedIndices((indices) =>
           indices.filter((index) => index !== i),
         );
+        setSearchResult("found");
         setIsSearching(false);
-
         return;
       }
 
@@ -705,6 +710,7 @@ function App() {
     }
 
     setSearchMiddle(null);
+    setSearchResult("not-found");
     setIsSearching(false);
   }
 
@@ -726,7 +732,6 @@ function App() {
       const middle = Math.floor((left + right) / 2);
 
       setSearchMiddle(middle);
-
       setSearchComparisons((count) => count + 1);
 
       await sleep(speedRef.current);
@@ -737,32 +742,26 @@ function App() {
         setEliminatedIndices((indices) =>
           indices.filter((index) => index !== middle),
         );
+        setSearchResult("found");
         setIsSearching(false);
-
         return;
       }
 
       if (searchArray[middle] < target) {
         const eliminated = Array.from(
-          {
-            length: middle - left + 1,
-          },
+          { length: middle - left + 1 },
           (_, index) => left + index,
         );
 
         setEliminatedIndices((indices) => [...indices, ...eliminated]);
-
         left = middle + 1;
       } else {
         const eliminated = Array.from(
-          {
-            length: right - middle + 1,
-          },
+          { length: right - middle + 1 },
           (_, index) => middle + index,
         );
 
         setEliminatedIndices((indices) => [...indices, ...eliminated]);
-
         right = middle - 1;
       }
 
@@ -770,6 +769,7 @@ function App() {
     }
 
     setSearchMiddle(null);
+    setSearchResult("not-found");
     setIsSearching(false);
   }
 
@@ -1623,6 +1623,11 @@ function App() {
 
         {activeSection === "sorting" && (
           <>
+            <p className="section-description">
+              Visualize how sorting algorithms compare and rearrange values step
+              by step.
+            </p>
+
             <section className="controls-panel sorting-controls-panel">
               <div>
                 <label>Algorithm</label>
@@ -1800,6 +1805,11 @@ function App() {
 
         {activeSection === "searching" && (
           <>
+            <p className="section-description">
+              Compare linear and binary search as they inspect and eliminate
+              values.
+            </p>
+
             <section className="controls-panel searching-controls-panel">
               <div>
                 <label>Algorithm</label>
@@ -1917,22 +1927,38 @@ function App() {
               </div>
             </section>
 
-            <section className="info-panel">
+            <section className="info-panel searching-info-panel">
               <div>
                 <span>Comparisons</span>
-
                 <strong>{searchComparisons}</strong>
               </div>
 
               <div>
                 <span>Target</span>
+                <strong>{searchTarget || "—"}</strong>
+              </div>
 
-                <strong>{searchTarget}</strong>
+              <div>
+                <span>Result</span>
+                <strong
+                  className={
+                    searchResult === "found"
+                      ? "result-found"
+                      : searchResult === "not-found"
+                        ? "result-not-found"
+                        : ""
+                  }
+                >
+                  {searchResult === "idle"
+                    ? "—"
+                    : searchResult === "found"
+                      ? "Found"
+                      : "Not Found"}
+                </strong>
               </div>
 
               <div>
                 <span>Time Complexity</span>
-
                 <strong>
                   {selectedSearchAlgorithm === "binary" ? "O(log n)" : "O(n)"}
                 </strong>
@@ -1940,7 +1966,6 @@ function App() {
 
               <div>
                 <span>Space Complexity</span>
-
                 <strong>O(1)</strong>
               </div>
             </section>
@@ -1953,6 +1978,11 @@ function App() {
 
         {activeSection === "pathfinding" && (
           <>
+            <p className="section-description">
+              Explore how pathfinding algorithms navigate walls, weights, and
+              shortest paths.
+            </p>
+
             <section className="controls-panel pathfinding-controls-panel">
               <div>
                 <label>Algorithm</label>
@@ -2151,6 +2181,10 @@ function App() {
 
         {activeSection === "graphs" && (
           <>
+            <p className="section-description">
+              Build and edit a graph, then watch BFS and DFS traverse its nodes.
+            </p>
+
             <section className="controls-panel graph-controls-panel">
               <div>
                 <label>Algorithm</label>

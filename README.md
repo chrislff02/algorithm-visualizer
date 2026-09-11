@@ -1,75 +1,86 @@
-# React + TypeScript + Vite
+# Algorithm Visualizer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive web application for visualizing common computer science algorithms step by step.
 
-Currently, two official plugins are available:
+The project includes sorting, searching, pathfinding, and graph traversal visualizations with adjustable animation speed and interactive controls.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+### Sorting Algorithms
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Bubble Sort
+- Selection Sort
+- Insertion Sort
+- Merge Sort
+- Quick Sort
+- Adjustable array size
+- Random array generation
+- Adjustable animation speed
+- Comparison and swap counters
+- Time and space complexity display
 
-## Expanding the ESLint configuration
+### Searching Algorithms
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Binary Search
+- Linear Search
+- Adjustable array size
+- Random unique sorted array generation
+- Custom target values
+- Adjustable animation speed
+- Found / Not Found result feedback
+- Comparison counter
+- Time and space complexity display
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Pathfinding Algorithms
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Breadth-First Search (BFS)
+- Depth-First Search (DFS)
+- Dijkstra's Algorithm
+- A\* Search
+- Interactive wall placement
+- Weighted cells
+- Animated visited nodes and final path
+- Path cost display
+- Clear Grid and Reset Path controls
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Graph Traversal
 
-```
+- Breadth-First Search (BFS)
+- Depth-First Search (DFS)
+- Add and move nodes
+- Connect nodes
+- Delete nodes
+- Delete edges
+- Choose a starting node
+- Animated traversal order
+- Reset traversal
+- Reset to the default graph
+- Clear the entire graph
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Tech Stack
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- React
+- TypeScript
+- Vite
+- CSS
+- ESLint
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## What I Learned
 
-```
+This project helped me practice and demonstrate:
+
+- Data structures and algorithms
+- Algorithm visualization
+- React state management
+- TypeScript
+- Asynchronous animations
+- Interactive UI design
+- Responsive web design
+- Graph and grid-based data structures
+
+## Running the Project Locally
+
+- Clone the repository
+- Move into the project folder
+- Install dependencies
+- Start the development server
