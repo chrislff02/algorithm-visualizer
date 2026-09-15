@@ -1,33 +1,9 @@
 import { useRef, useState } from "react";
 import "./App.css";
 
-/* ----------------------------- */
-/* Constants / Types             */
-/* ----------------------------- */
-
-const INITIAL_ARRAY = [42, 88, 21, 65, 35, 97, 53, 74];
-
-const SEARCH_ARRAY = [12, 21, 35, 42, 53, 65, 74, 88, 97];
-
-const ROWS = 12;
-const COLS = 20;
-
-const START_NODE = { row: 5, col: 3 };
-const END_NODE = { row: 5, col: 16 };
-
-function getNextNodeId(nodes: GraphNode[]) {
-  let index = 0;
-
-  while (true) {
-    const id = String.fromCharCode(65 + index);
-
-    if (!nodes.some((node) => node.id === id)) {
-      return id;
-    }
-
-    index++;
-  }
-}
+/* =================================
+                Types
+   ================================= */
 
 type Section = "sorting" | "searching" | "pathfinding" | "graphs";
 
@@ -46,11 +22,27 @@ type GridMode = "wall" | "weight";
 
 type GraphAlgorithm = "bfs" | "dfs";
 
+type GraphMode = "connect" | "delete-node" | "delete-edge";
+
 type GraphNode = {
   id: string;
   x: number;
   y: number;
 };
+
+/* =================================
+   Constants
+   ================================= */
+
+const INITIAL_ARRAY = [42, 88, 21, 65, 35, 97, 53, 74];
+
+const SEARCH_ARRAY = [12, 21, 35, 42, 53, 65, 74, 88, 97];
+
+const ROWS = 12;
+const COLS = 20;
+
+const START_NODE = { row: 5, col: 3 };
+const END_NODE = { row: 5, col: 16 };
 
 const DEFAULT_GRAPH_NODES: GraphNode[] = [
   { id: "A", x: 15, y: 50 },
@@ -74,23 +66,46 @@ const DEFAULT_GRAPH_EDGES: [string, string][] = [
   ["F", "G"],
 ];
 
-/* ----------------------------- */
-/* App                           */
-/* ----------------------------- */
+/* =================================
+        Top-level Helpers
+   ================================= */
+
+/**
+ * Returns first unused alphabetical node id (A, B, C, ...)
+ */
+function getNextNodeId(nodes: GraphNode[]) {
+  let index = 0;
+
+  while (true) {
+    const id = String.fromCharCode(65 + index);
+
+    if (!nodes.some((node) => node.id === id)) {
+      return id;
+    }
+
+    index++;
+  }
+}
+
+/* =================================
+                  App
+   ================================= */
 
 function App() {
-  /* --------------------------- */
-  /* General                     */
-  /* --------------------------- */
+  /* ---------------------------------
+              Shared state
+     --------------------------------- */
 
   const [activeSection, setActiveSection] = useState<Section>("sorting");
 
   const [speed, setSpeed] = useState(400);
+
+  // The ref lets running animations read the newest speed without restarting.
   const speedRef = useRef(400);
 
-  /* --------------------------- */
-  /* Sorting                     */
-  /* --------------------------- */
+  /* ---------------------------------
+              Sorting state
+     --------------------------------- */
 
   const [arraySize, setArraySize] = useState(8);
   const [array, setArray] = useState(INITIAL_ARRAY);
@@ -114,15 +129,10 @@ function App() {
   const [comparisons, setComparisons] = useState(0);
   const [swaps, setSwaps] = useState(0);
   const [isSorting, setIsSorting] = useState(false);
-  const [pathCost, setPathCost] = useState(0);
 
-  const [searchResult, setSearchResult] = useState<
-    "idle" | "found" | "not-found"
-  >("idle");
-
-  /* --------------------------- */
-  /* Searching                   */
-  /* --------------------------- */
+  /* ---------------------------------
+              Searching state
+     --------------------------------- */
 
   const [selectedSearchAlgorithm, setSelectedSearchAlgorithm] =
     useState<SearchAlgorithm>("binary");
@@ -143,9 +153,13 @@ function App() {
 
   const [searchArray, setSearchArray] = useState<number[]>(SEARCH_ARRAY);
 
-  /* --------------------------- */
-  /* Pathfinding                 */
-  /* --------------------------- */
+  const [searchResult, setSearchResult] = useState<
+    "idle" | "found" | "not-found"
+  >("idle");
+
+  /* ---------------------------------
+            Pathfinding state
+     --------------------------------- */
 
   const [selectedPathAlgorithm, setSelectedPathAlgorithm] =
     useState<PathAlgorithm>("bfs");
@@ -159,10 +173,11 @@ function App() {
   const [pathNodes, setPathNodes] = useState<string[]>([]);
 
   const [isPathfinding, setIsPathfinding] = useState(false);
+  const [pathCost, setPathCost] = useState(0);
 
-  /* --------------------------- */
-  /* Graphs                      */
-  /* --------------------------- */
+  /* ---------------------------------
+                Graph state
+     --------------------------------- */
 
   const [selectedGraphAlgorithm, setSelectedGraphAlgorithm] =
     useState<GraphAlgorithm>("bfs");
@@ -171,9 +186,7 @@ function App() {
   const [selectedGraphNode, setSelectedGraphNode] = useState<string | null>(
     null,
   );
-  const [graphMode, setGraphMode] = useState<
-    "connect" | "delete-node" | "delete-edge"
-  >("connect");
+  const [graphMode, setGraphMode] = useState<GraphMode>("connect");
 
   const [graphNodes, setGraphNodes] =
     useState<GraphNode[]>(DEFAULT_GRAPH_NODES);
@@ -187,9 +200,9 @@ function App() {
   const [isGraphRunning, setIsGraphRunning] = useState(false);
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
 
-  /* --------------------------- */
-  /* Shared Helpers              */
-  /* --------------------------- */
+  /* =================================
+            Shared helpers
+     ================================= */
 
   function sleep(ms: number) {
     return new Promise<void>((resolve) => {
@@ -204,9 +217,9 @@ function App() {
     speedRef.current = newSpeed;
   }
 
-  /* --------------------------- */
-  /* Sorting Helpers             */
-  /* --------------------------- */
+  /* =================================
+            Sorting helpers
+     ================================= */
 
   function resetSortingVisualization() {
     setComparing([]);
@@ -242,9 +255,9 @@ function App() {
     resetSortingVisualization();
   }
 
-  /* --------------------------- */
-  /* Bubble Sort                 */
-  /* --------------------------- */
+  /* ---------------------------------
+              Bubble Sort
+     --------------------------------- */
 
   async function bubbleSort() {
     setIsSorting(true);
@@ -284,9 +297,9 @@ function App() {
     setIsSorting(false);
   }
 
-  /* --------------------------- */
-  /* Selection Sort              */
-  /* --------------------------- */
+  /* ---------------------------------
+            Selection Sort
+     --------------------------------- */
 
   async function selectionSort() {
     setIsSorting(true);
@@ -337,9 +350,9 @@ function App() {
     setIsSorting(false);
   }
 
-  /* --------------------------- */
-  /* Insertion Sort              */
-  /* --------------------------- */
+  /* ---------------------------------
+              Insertion Sort
+     --------------------------------- */
 
   async function insertionSort() {
     setIsSorting(true);
@@ -394,9 +407,9 @@ function App() {
     setIsSorting(false);
   }
 
-  /* --------------------------- */
-  /* Merge Sort                  */
-  /* --------------------------- */
+  /* ---------------------------------
+                Merge Sort
+     --------------------------------- */
 
   async function mergeSort() {
     setIsSorting(true);
@@ -494,9 +507,9 @@ function App() {
     setIsSorting(false);
   }
 
-  /* --------------------------- */
-  /* Quick Sort                  */
-  /* --------------------------- */
+  /* ---------------------------------
+                Quick Sort
+     --------------------------------- */
 
   async function quickSort() {
     setIsSorting(true);
@@ -638,9 +651,9 @@ function App() {
     }
   }
 
-  /* --------------------------- */
-  /* Search Helpers              */
-  /* --------------------------- */
+  /* =================================
+            Searching helpers
+     ================================= */
 
   function resetSearchVisualization() {
     setSearchMiddle(null);
@@ -650,6 +663,7 @@ function App() {
     setSearchResult("idle");
   }
 
+  // Binary search nees a sorted array, generated values stay unique & ordered
   function createUniqueSortedSearchArray(size: number) {
     const values = new Set<number>();
 
@@ -781,9 +795,9 @@ function App() {
     }
   }
 
-  /* --------------------------- */
-  /* Pathfinding Helpers         */
-  /* --------------------------- */
+  /* =================================
+          Pathfinding helpers
+     ================================= */
 
   function resetPathVisualization() {
     setVisitedNodes([]);
@@ -846,6 +860,7 @@ function App() {
     resetPathVisualization();
   }
 
+  // Reconstruct route from parent map, then show it from start to end
   async function animatePath(
     endKey: string,
     startKey: string,
@@ -867,6 +882,7 @@ function App() {
         continue;
       }
 
+      // Normal cells cost 1; weighted cells cost 5
       const weight = weightedNodes.includes(node) ? 5 : 1;
 
       totalCost += weight;
@@ -881,9 +897,9 @@ function App() {
     setPathCost(totalCost);
   }
 
-  /* --------------------------- */
-  /* BFS                         */
-  /* --------------------------- */
+  /* ---------------------------------
+      Breadth-First Search (grid)
+     --------------------------------- */
 
   async function bfsPathfinding() {
     setIsPathfinding(true);
@@ -960,9 +976,9 @@ function App() {
     setIsPathfinding(false);
   }
 
-  /* --------------------------- */
-  /* DFS                         */
-  /* --------------------------- */
+  /* ---------------------------------
+        Depth-First Search (grid)
+     --------------------------------- */
 
   async function dfsPathfinding() {
     setIsPathfinding(true);
@@ -1048,9 +1064,9 @@ function App() {
     setIsPathfinding(false);
   }
 
-  /* --------------------------- */
-  /* Dijkstra                    */
-  /* --------------------------- */
+  /* ---------------------------------
+          Dijkstra's Algorithm
+     --------------------------------- */
 
   async function dijkstraPathfinding() {
     setIsPathfinding(true);
@@ -1185,6 +1201,10 @@ function App() {
     }
   }
 
+  /* ---------------------------------
+                A* Search
+     --------------------------------- */
+
   function heuristic(row: number, col: number, endRow: number, endCol: number) {
     return Math.abs(row - endRow) + Math.abs(col - endCol);
   }
@@ -1304,9 +1324,9 @@ function App() {
     setIsPathfinding(false);
   }
 
-  /* --------------------------- */
-  /* Render                      */
-  /* --------------------------- */
+  /* =================================
+        Graph helpers and traversal
+     ================================= */
 
   function resetGraphVisualization() {
     setGraphVisited([]);
@@ -1315,6 +1335,7 @@ function App() {
     setSelectedGraphNode(null);
   }
 
+  // Convert edge list into an adjacency list used by BFS and DFS
   function getGraphAdjacency() {
     const adjacency: Record<string, string[]> = {};
 
@@ -1529,6 +1550,7 @@ function App() {
     }
   }
 
+  // Store node positions as percentages so graph scales with canvas
   function moveGraphNode(event: React.MouseEvent<HTMLDivElement>) {
     if (!draggingNode || isGraphRunning) {
       return;
@@ -1576,6 +1598,10 @@ function App() {
     resetGraphVisualization();
   }
 
+  /* =================================
+                  Render
+     ================================= */
+
   return (
     <div className="app">
       <header className="header">
@@ -1617,9 +1643,7 @@ function App() {
       </header>
 
       <main className="main">
-        {/* --------------------- */}
-        {/* Sorting               */}
-        {/* --------------------- */}
+        {/* Sorting */}
 
         {activeSection === "sorting" && (
           <>
@@ -1799,9 +1823,7 @@ function App() {
           </>
         )}
 
-        {/* --------------------- */}
-        {/* Searching             */}
-        {/* --------------------- */}
+        {/* Searching */}
 
         {activeSection === "searching" && (
           <>
@@ -1972,9 +1994,7 @@ function App() {
           </>
         )}
 
-        {/* --------------------- */}
-        {/* Pathfinding           */}
-        {/* --------------------- */}
+        {/* Pathfinding */}
 
         {activeSection === "pathfinding" && (
           <>
@@ -2175,9 +2195,7 @@ function App() {
           </>
         )}
 
-        {/* --------------------- */}
-        {/* Graphs                */}
-        {/* --------------------- */}
+        {/* Graphs */}
 
         {activeSection === "graphs" && (
           <>
@@ -2231,12 +2249,7 @@ function App() {
                   value={graphMode}
                   disabled={isGraphRunning}
                   onChange={(event) => {
-                    setGraphMode(
-                      event.target.value as
-                        | "connect"
-                        | "delete-node"
-                        | "delete-edge",
-                    );
+                    setGraphMode(event.target.value as GraphMode);
 
                     setSelectedGraphNode(null);
                   }}

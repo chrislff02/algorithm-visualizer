@@ -1,13 +1,49 @@
+/* =================================
+   Theme variables
+   ================================= */
+:root {
+  --bg: #0f1115;
+  --panel: #171a20;
+  --canvas: #111419;
+  --surface: #20242b;
+  --surface-hover: #2d323c;
+  --button-surface: #22262e;
+  --nav-surface: #181b21;
+
+  --border: #2b2f38;
+  --border-strong: #343843;
+  --header-border: #2a2d35;
+
+  --text-primary: #f5f5f5;
+  --text-secondary: #9ca3af;
+  --text-muted: #8f96a3;
+  --text-dim: #707784;
+  --text-dark: #111318;
+  --bar-default: #d8dbe2;
+
+  --green: #4ade80;
+  --yellow: #facc15;
+  --blue: #60a5fa;
+  --pink: #fb7185;
+  --purple: #c084fc;
+  --orange: #f97316;
+  --slate: #64748b;
+  --merge-range: #94a3b8;
+}
+
+/* =================================
+   Base / page layout
+   ================================= */
 html,
 body,
 #root {
   margin: 0;
   min-height: 100%;
-  background: #0f1115;
+  background: var(--bg);
 }
 
 html {
-  background: #0f1115;
+  background: var(--bg);
 }
 
 body {
@@ -21,8 +57,8 @@ body {
 
 .app {
   min-height: 100vh;
-  background: #0f1115;
-  color: #f5f5f5;
+  background: var(--bg);
+  color: var(--text-primary);
 }
 
 .header {
@@ -31,12 +67,12 @@ body {
   align-items: center;
   gap: 30px;
   padding: 28px 6%;
-  border-bottom: 1px solid #2a2d35;
+  border-bottom: 1px solid var(--header-border);
 }
 
 .eyebrow {
   margin: 0 0 6px;
-  color: #8f96a3;
+  color: var(--text-muted);
   font-size: 0.8rem;
   letter-spacing: 0.18em;
 }
@@ -52,21 +88,21 @@ body {
 }
 
 .nav button {
-  border: 1px solid #343843;
-  background: #181b21;
-  color: #d8dbe2;
+  border: 1px solid var(--border-strong);
+  background: var(--nav-surface);
+  color: var(--bar-default);
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
 }
 
 .nav button:hover {
-  background: #22262e;
+  background: var(--button-surface);
 }
 
 .nav button.active {
-  background: #f5f5f5;
-  color: #111318;
+  background: var(--text-primary);
+  color: var(--text-dark);
 }
 
 .main {
@@ -75,7 +111,9 @@ body {
   padding-bottom: 48px;
 }
 
-/* Controls */
+/* =================================
+   Shared controls
+   ================================= */
 
 .controls-panel {
   display: flex;
@@ -84,8 +122,8 @@ body {
   flex-wrap: wrap;
   padding: 20px;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -96,7 +134,7 @@ body {
 }
 
 .controls-panel label {
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
@@ -104,10 +142,10 @@ body {
   min-width: 180px;
   padding: 11px;
 
-  background: #0f1115;
+  background: var(--bg);
   color: white;
 
-  border: 1px solid #343843;
+  border: 1px solid var(--border-strong);
   border-radius: 7px;
 }
 
@@ -121,13 +159,13 @@ body {
 
 .primary-button {
   border: none;
-  background: #f5f5f5;
-  color: #111318;
+  background: var(--text-primary);
+  color: var(--text-dark);
 }
 
 .secondary-button {
-  border: 1px solid #343843;
-  background: #22262e;
+  border: 1px solid var(--border-strong);
+  background: var(--button-surface);
   color: white;
 }
 
@@ -151,7 +189,9 @@ select:disabled {
   cursor: pointer;
 }
 
-/* Visualizer */
+/* =================================
+   Sorting visualizer
+   ================================= */
 
 .visualizer-panel {
   height: 360px;
@@ -162,11 +202,11 @@ select:disabled {
   align-items: center;
   justify-content: center;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
 
-  color: #707784;
+  color: var(--text-dim);
 }
 
 .bars-container {
@@ -190,7 +230,7 @@ select:disabled {
   justify-content: center;
   align-items: flex-start;
 
-  background: #d8dbe2;
+  background: var(--bar-default);
   border-radius: 5px 5px 0 0;
 
   transition:
@@ -200,42 +240,42 @@ select:disabled {
 
 .bar span {
   margin-top: 8px;
-  color: #111318;
+  color: var(--text-dark);
   font-size: 0.85rem;
   font-weight: 700;
 }
 
-/* Visualization states */
+/* Sorting visualization states */
 
 .bar.merge-range {
-  background: #94a3b8;
+  background: var(--merge-range);
 }
 
 .bar.minimum {
-  background: #60a5fa;
+  background: var(--blue);
 }
 
 .bar.sorted {
-  background: #4ade80;
+  background: var(--green);
 }
 
 .bar.comparing {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .bar.inserting {
-  background: #c084fc;
+  background: var(--purple);
 }
 
 .bar.merge-writing {
-  background: #fb7185;
+  background: var(--pink);
 }
 
 .bar.pivot {
-  background: #f97316;
+  background: var(--orange);
 }
 
-/* Legend */
+/* Shared legend */
 
 .legend {
   display: flex;
@@ -245,7 +285,7 @@ select:disabled {
 
   padding: 12px 20px 18px;
 
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 0.8rem;
 }
 
@@ -263,34 +303,36 @@ select:disabled {
 }
 
 .comparing-box {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .minimum-box {
-  background: #60a5fa;
+  background: var(--blue);
 }
 
 .inserting-box {
-  background: #c084fc;
+  background: var(--purple);
 }
 
 .merge-range-box {
-  background: #94a3b8;
+  background: var(--merge-range);
 }
 
 .merge-writing-box {
-  background: #fb7185;
+  background: var(--pink);
 }
 
 .pivot-box {
-  background: #f97316;
+  background: var(--orange);
 }
 
 .sorted-box {
-  background: #4ade80;
+  background: var(--green);
 }
 
-/* Stats */
+/* =================================
+   Shared statistics cards
+   ================================= */
 
 .info-panel {
   display: grid;
@@ -302,8 +344,8 @@ select:disabled {
 .info-panel div {
   padding: 18px;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 
@@ -311,7 +353,7 @@ select:disabled {
   display: block;
   margin-bottom: 8px;
 
-  color: #8f96a3;
+  color: var(--text-muted);
   font-size: 0.8rem;
 }
 
@@ -319,14 +361,16 @@ select:disabled {
   font-size: 1.2rem;
 }
 
-/* Placeholder sections */
+/* =================================
+   Placeholder panels
+   ================================= */
 
 .placeholder-panel {
   padding: 40px;
   margin-top: 24px;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
 
   text-align: center;
@@ -339,10 +383,12 @@ select:disabled {
 
 .placeholder-panel p {
   margin-bottom: 0;
-  color: #9ca3af;
+  color: var(--text-secondary);
 }
 
-/* Responsive */
+/* =================================
+   Shared responsive rules
+   ================================= */
 
 @media (max-width: 800px) {
   .header {
@@ -379,14 +425,17 @@ select:disabled {
   }
 }
 
+/* =================================
+   Searching
+   ================================= */
 .target-input {
   width: 120px;
   padding: 11px;
 
-  background: #0f1115;
+  background: var(--bg);
   color: white;
 
-  border: 1px solid #343843;
+  border: 1px solid var(--border-strong);
   border-radius: 7px;
 }
 
@@ -399,8 +448,8 @@ select:disabled {
   align-items: center;
   justify-content: center;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -422,8 +471,8 @@ select:disabled {
   align-items: center;
   justify-content: center;
 
-  background: #d8dbe2;
-  color: #111318;
+  background: var(--bar-default);
+  color: var(--text-dark);
 
   border-radius: 8px;
 
@@ -435,7 +484,7 @@ select:disabled {
 }
 
 .search-item.search-middle {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .search-item.search-eliminated {
@@ -443,28 +492,31 @@ select:disabled {
 }
 
 .search-item.search-found {
-  background: #4ade80;
+  background: var(--green);
   opacity: 1;
 }
 
 .search-middle-box {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .search-eliminated-box {
-  background: #64748b;
+  background: var(--slate);
 }
 
 .search-found-box {
-  background: #4ade80;
+  background: var(--green);
 }
 
+/* =================================
+   Pathfinding
+   ================================= */
 .pathfinding-panel {
   margin-top: 24px;
   padding: 24px;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -480,9 +532,9 @@ select:disabled {
 .grid-node {
   aspect-ratio: 1;
 
-  border: 1px solid #343843;
-  background: #20242b;
-  color: #111318;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-dark);
 
   padding: 0;
   cursor: pointer;
@@ -496,31 +548,31 @@ select:disabled {
 }
 
 .grid-node:hover {
-  background: #2d323c;
+  background: var(--surface-hover);
 }
 
 .start-node {
-  background: #4ade80;
+  background: var(--green);
 }
 
 .end-node {
-  background: #fb7185;
+  background: var(--pink);
 }
 
 .wall-node {
-  background: #64748b;
+  background: var(--slate);
 }
 
 .start-box {
-  background: #4ade80;
+  background: var(--green);
 }
 
 .end-box {
-  background: #fb7185;
+  background: var(--pink);
 }
 
 .wall-box {
-  background: #64748b;
+  background: var(--slate);
 }
 
 @media (max-width: 700px) {
@@ -538,35 +590,38 @@ select:disabled {
 }
 
 .visited-node {
-  background: #60a5fa;
+  background: var(--blue);
 }
 
 .path-node {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .visited-box {
-  background: #60a5fa;
+  background: var(--blue);
 }
 
 .path-box {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .weighted-node {
-  background: #c084fc;
+  background: var(--purple);
 }
 
 .weight-box {
-  background: #c084fc;
+  background: var(--purple);
 }
 
+/* =================================
+   Graph traversal
+   ================================= */
 .graph-panel {
   margin-top: 24px;
   padding: 24px;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 12px;
 }
 
@@ -576,8 +631,8 @@ select:disabled {
   width: 100%;
   height: 500px;
 
-  background: #111419;
-  border: 1px solid #2b2f38;
+  background: var(--canvas);
+  border: 1px solid var(--border);
   border-radius: 10px;
 
   overflow: hidden;
@@ -594,7 +649,7 @@ select:disabled {
 }
 
 .graph-edges line {
-  stroke: #64748b;
+  stroke: var(--slate);
   stroke-width: 3;
 }
 
@@ -606,11 +661,11 @@ select:disabled {
 
   transform: translate(-50%, -50%);
 
-  border: 3px solid #d8dbe2;
+  border: 3px solid var(--bar-default);
   border-radius: 50%;
 
-  background: #20242b;
-  color: #f5f5f5;
+  background: var(--surface);
+  color: var(--text-primary);
 
   font-size: 1rem;
   font-weight: 700;
@@ -630,31 +685,31 @@ select:disabled {
 }
 
 .graph-node-visited {
-  background: #60a5fa;
-  color: #111318;
+  background: var(--blue);
+  color: var(--text-dark);
 }
 
 .graph-node-current {
-  background: #facc15;
-  color: #111318;
+  background: var(--yellow);
+  color: var(--text-dark);
 
   transform: translate(-50%, -50%) scale(1.12);
 }
 
 .graph-node-start {
-  border-color: #4ade80;
+  border-color: var(--green);
 }
 
 .graph-start-box {
-  background: #4ade80;
+  background: var(--green);
 }
 
 .graph-current-box {
-  background: #facc15;
+  background: var(--yellow);
 }
 
 .graph-visited-box {
-  background: #60a5fa;
+  background: var(--blue);
 }
 
 @media (max-width: 700px) {
@@ -671,12 +726,12 @@ select:disabled {
 }
 
 .graph-node-selected {
-  outline: 4px solid #c084fc;
+  outline: 4px solid var(--purple);
   outline-offset: 4px;
 }
 
 .graph-selected-box {
-  background: #c084fc;
+  background: var(--purple);
 }
 
 .graph-help-panel {
@@ -690,8 +745,8 @@ select:disabled {
 .graph-help-panel div {
   padding: 14px 16px;
 
-  background: #171a20;
-  border: 1px solid #2b2f38;
+  background: var(--panel);
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
 
@@ -700,12 +755,12 @@ select:disabled {
 
   margin-bottom: 6px;
 
-  color: #f5f5f5;
+  color: var(--text-primary);
   font-size: 0.85rem;
 }
 
 .graph-help-panel span {
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 0.78rem;
   line-height: 1.45;
 }
@@ -739,7 +794,7 @@ select:disabled {
   min-width: 0;
 }
 
-/* Row 2 buttons */
+/* Keep graph action buttons aligned on the second desktop row. */
 
 .graph-controls-panel .clear-graph-button {
   grid-column: 1;
@@ -786,9 +841,9 @@ select:disabled {
   }
 }
 
-/* -------------------------------- */
-/* Section control layout polish    */
-/* -------------------------------- */
+/* =================================
+   Section-specific control layouts
+   ================================= */
 
 .sorting-controls-panel,
 .searching-controls-panel,
@@ -874,11 +929,11 @@ select:disabled {
 }
 
 .result-found {
-  color: #4ade80;
+  color: var(--green);
 }
 
 .result-not-found {
-  color: #fb7185;
+  color: var(--pink);
 }
 
 @media (max-width: 900px) {
@@ -893,7 +948,10 @@ select:disabled {
   }
 }
 
-/* Final mobile-only layout */
+/* =================================
+   Final mobile overrides
+   These remain last so they win the cascade on small screens.
+   ================================= */
 @media (max-width: 500px) {
   .main {
     width: 94%;
@@ -951,9 +1009,12 @@ select:disabled {
   }
 }
 
+/* =================================
+   Section descriptions
+   ================================= */
 .section-description {
   margin: 0 0 16px;
-  color: #9ca3af;
+  color: var(--text-secondary);
   font-size: 0.95rem;
   line-height: 1.5;
 }
